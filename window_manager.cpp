@@ -35,8 +35,8 @@ std::unique_ptr<WindowManager> WindowManager::Create(
 }
 
 WindowManager::WindowManager(Display* display)
-    : display_(display) {
-  CHECK_NOTNULL(display);
+    : display_(CHECK_NOTNULL(display)),
+      root_(DefaultRootWindow(display_)) {
 }
 
 WindowManager::~WindowManager() {

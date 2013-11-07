@@ -49,6 +49,8 @@ class WindowManager {
 
   // Handle to the underlying Xlib Display struct.
   Display* display_;
+  // Handle to root window.
+  const Window root_;
 };
 
 }
