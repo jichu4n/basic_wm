@@ -46,13 +46,9 @@ class WindowManager {
  private:
   // Invoked internally by Create().
   WindowManager(Display* display);
-  // X error handler passed to XSetErrorHandler(). Stores the error in x_errors_.
-  int OnXError(Display* display, XErrorEvent* e);
 
   // Handle to the underlying Xlib Display struct.
   Display* display_;
-  // All received X errors.
-  std::list<XErrorEvent> x_errors_;
 };
 
 }
