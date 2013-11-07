@@ -120,8 +120,8 @@ void WindowManager::Run() {
 
 void WindowManager::Frame(Window w) {
   // Visual settings of the frame to create.
-  const unsigned int BORDER_WIDTH = 2;
-  const unsigned long BORDER_COLOR = 0xffff00;
+  const unsigned int BORDER_WIDTH = 3;
+  const unsigned long BORDER_COLOR = 0xff0000;
   const unsigned long BG_COLOR = 0x0000ff;
 
   CHECK(!clients_.count(w));
