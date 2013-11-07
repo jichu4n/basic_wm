@@ -84,6 +84,15 @@ Position<T> operator + (const Vector2D<T> &v, const Position<T>& a);
 template <typename T>
 Position<T> operator - (const Position<T>& a, const Vector2D<T> &v);
 
+// Size operators.
+template <typename T>
+Vector2D<T> operator - (const Size<T>& a, const Size<T>& b);
+template <typename T>
+Size<T> operator + (const Size<T>& a, const Vector2D<T> &v);
+template <typename T>
+Size<T> operator + (const Vector2D<T> &v, const Size<T>& a);
+template <typename T>
+Size<T> operator - (const Size<T>& a, const Vector2D<T> &v);
 }
 
 
@@ -148,6 +157,26 @@ Position<T> operator + (const Vector2D<T> &v, const Position<T>& a) {
 template <typename T>
 Position<T> operator - (const Position<T>& a, const Vector2D<T> &v) {
   return Position<T>(a.x - v.x, a.y - v.y);
+}
+
+template <typename T>
+Vector2D<T> operator - (const Size<T>& a, const Size<T>& b) {
+  return Vector2D<T>(a.width - b.width, a.height - b.height);
+}
+
+template <typename T>
+Size<T> operator + (const Size<T>& a, const Vector2D<T> &v) {
+  return Size<T>(a.width + v.x, a.height + v.y);
+}
+
+template <typename T>
+Size<T> operator + (const Vector2D<T> &v, const Size<T>& a) {
+  return Size<T>(a.width + v.x, a.height + v.y);
+}
+
+template <typename T>
+Size<T> operator - (const Size<T>& a, const Vector2D<T> &v) {
+  return Size<T>(a.width - v.x, a.height - v.y);
 }
 
 }

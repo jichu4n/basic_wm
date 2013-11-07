@@ -175,6 +175,8 @@ std::string ToString(const XEvent& e) {
           "position_root",
           Position<int>(e.xmotion.x_root, e.xmotion.y_root).ToString());
       properties.emplace_back(
+          "state", ToString(e.xmotion.state));
+      properties.emplace_back(
           "time", ToString(e.xmotion.time));
       break;
     default:

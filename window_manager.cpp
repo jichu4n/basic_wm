@@ -180,6 +180,17 @@ void WindowManager::Frame(Window w) {
       GrabModeSync,
       None,
       None);
+  XGrabButton(
+      display_,
+      Button3,
+      Mod1Mask,
+      w,
+      false,
+      ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
+      GrabModeAsync,
+      GrabModeSync,
+      None,
+      None);
 
   LOG(INFO) << "Framed window " << w << " [" << frame << "]";
 }
@@ -243,6 +254,21 @@ void WindowManager::OnMapRequest(const XMapRequestEvent& e) {
 }
 
 void WindowManager::OnConfigureRequest(const XConfigureRequestEvent& e) {
+  XWindowChanges changes;
+  changes.x = e.x;
+  changes.y = e.y;
+  changes.width = e.width;
+  changes.height = e.height;
+  changes.border_width = e.border_width;
+  changes.sibling = e.above;
+  changes.stack_mode = e.detail;
+  if (clients_.count(e.window)) {
+    const Window frame = clients_[e.window];
+    XConfigureWindow(display_, frame, e.value_mask, &changes);
+    LOG(INFO) << "Resize [" << frame << "] to " << Size<int>(e.width, e.height);
+  }
+  XConfigureWindow(display_, e.window, e.value_mask, &changes);
+  LOG(INFO) << "Resize " << e.window << " to " << Size<int>(e.width, e.height);
 }
 
 void WindowManager::OnButtonPress(const XButtonEvent& e) {
@@ -252,7 +278,7 @@ void WindowManager::OnButtonPress(const XButtonEvent& e) {
   // 1. Save initial cursor position.
   drag_start_pos_ = Position<int>(e.x_root, e.y_root);
 
-  // 2. Save initial window position.
+  // 2. Save initial window info.
   Window returned_root;
   int x, y;
   unsigned width, height, border_width, depth;
@@ -265,6 +291,7 @@ void WindowManager::OnButtonPress(const XButtonEvent& e) {
       &border_width,
       &depth));
   drag_start_frame_pos_ = Position<int>(x, y);
+  drag_start_frame_size_ = Size<int>(width, height);
 
   // 3. Raise clicked window to top.
   XRaiseWindow(display_, frame);
@@ -277,18 +304,31 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
   const Window frame = clients_[e.window];
   // 1. Calculate dest window location.
   const Position<int> drag_pos(e.x_root, e.y_root);
-  const Position<int> dest_frame_pos =
-      drag_start_frame_pos_ + (drag_pos - drag_start_pos_);
-  // 2. Move window.
-  XMoveWindow(
-      display_,
-      frame,
-      dest_frame_pos.x,
-      dest_frame_pos.y);
+  const Vector2D<int> delta = drag_pos - drag_start_pos_;
 
-  LOG(INFO) << "Move window " << e.window << " [" << frame << "] from "
-            << drag_start_frame_pos_.ToString() << " to "
-            << dest_frame_pos.ToString();
+  if (e.state & Button1Mask) {
+    // 2.a If moving, move window by delta.
+    const Position<int> dest_frame_pos = drag_start_frame_pos_ + delta;
+    XMoveWindow(
+        display_,
+        frame,
+        dest_frame_pos.x, dest_frame_pos.y);
+
+    LOG(INFO) << "Move window " << e.window << " [" << frame << "] from "
+              << drag_start_frame_pos_.ToString() << " to "
+              << dest_frame_pos.ToString();
+  } else if (e.state & Button3Mask) {
+    // 2.b If resizing, resize by delta.
+    const Size<int> dest_frame_size = drag_start_frame_size_ + delta;
+    XResizeWindow(
+        display_,
+        frame,
+        dest_frame_size.width, dest_frame_size.height);
+    XResizeWindow(
+        display_,
+        e.window,
+        dest_frame_size.width, dest_frame_size.height);
+  }
 }
 
 int WindowManager::OnXError(Display* display, XErrorEvent* e) {

@@ -79,6 +79,8 @@ class WindowManager {
   Position<int> drag_start_pos_;
   // During a window move/resize, the location of the initial window position.
   Position<int> drag_start_frame_pos_;
+  // During a window move/resize, the initial size of the window.
+  Size<int> drag_start_frame_size_;
 };
 
 }
