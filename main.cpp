@@ -17,11 +17,14 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include <cstdlib>
+#include <glog/logging.h>
 #include "window_manager.hpp"
 
 using xon::WindowManager;
 
 int main(int argc, char** argv) {
+  google::InitGoogleLogging(argv[0]);
+
   std::unique_ptr<WindowManager> window_manager(WindowManager::Create());
   if (window_manager == nullptr) {
     return EXIT_FAILURE;

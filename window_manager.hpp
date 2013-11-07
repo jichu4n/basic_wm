@@ -22,6 +22,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_map>
 extern "C" {
 #include <X11/Xlib.h>
 }
@@ -46,11 +47,30 @@ class WindowManager {
  private:
   // Invoked internally by Create().
   WindowManager(Display* display);
+  // Frames a top-level window.
+  void Frame(Window w);
+  // Unframes a (previously) top-level window.
+  void Unframe(Window w);
+
+  // Event handlers. These can be overridden by child classes.
+  void OnCreateNotify(const XCreateWindowEvent& e);
+  void OnDestroyNotify(const XDestroyWindowEvent& e);
+  void OnReparentNotify(const XReparentEvent& e);
+  void OnMapNotify(const XMapEvent& e);
+  void OnUnmapNotify(const XUnmapEvent& e);
+  void OnConfigureNotify(const XConfigureEvent& e);
+  void OnMapRequest(const XMapRequestEvent& e);
+  void OnConfigureRequest(const XConfigureRequestEvent& e);
+
+  // Xlib error handler.
+  static int OnXError(Display* display, XErrorEvent* e);
 
   // Handle to the underlying Xlib Display struct.
   Display* display_;
   // Handle to root window.
   const Window root_;
+  // Maps top-level windows to their frame windows.
+  std::unordered_map<Window, Window> clients_;
 };
 
 }
