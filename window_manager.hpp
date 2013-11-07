@@ -26,6 +26,7 @@
 extern "C" {
 #include <X11/Xlib.h>
 }
+#include "types.hpp"
 
 namespace xon {
 
@@ -61,6 +62,9 @@ class WindowManager {
   void OnConfigureNotify(const XConfigureEvent& e);
   void OnMapRequest(const XMapRequestEvent& e);
   void OnConfigureRequest(const XConfigureRequestEvent& e);
+  void OnButtonPress(const XButtonEvent& e);
+  void OnButtonRelease(const XButtonEvent& e);
+  void OnMotionNotify(const XMotionEvent& e);
 
   // Xlib error handler.
   static int OnXError(Display* display, XErrorEvent* e);
@@ -71,6 +75,10 @@ class WindowManager {
   const Window root_;
   // Maps top-level windows to their frame windows.
   std::unordered_map<Window, Window> clients_;
+  // During a window move/resize, the location of the initial cursor position.
+  Position<int> drag_start_pos_;
+  // During a window move/resize, the location of the initial window position.
+  Position<int> drag_start_frame_pos_;
 };
 
 }

@@ -158,6 +158,25 @@ std::string ToString(const XEvent& e) {
           "border_width",
           ToString(e.xconfigurerequest.border_width));
       break;
+    case ButtonPress:
+    case ButtonRelease:
+      properties.emplace_back(
+          "window", ToString(e.xbutton.window));
+      properties.emplace_back(
+          "button", ToString(e.xbutton.button));
+      properties.emplace_back(
+          "position_root",
+          Position<int>(e.xbutton.x_root, e.xbutton.y_root).ToString());
+      break;
+    case MotionNotify:
+      properties.emplace_back(
+          "window", ToString(e.xmotion.window));
+      properties.emplace_back(
+          "position_root",
+          Position<int>(e.xmotion.x_root, e.xmotion.y_root).ToString());
+      properties.emplace_back(
+          "time", ToString(e.xmotion.time));
+      break;
     default:
       // No properties are printed for unused events.
       break;

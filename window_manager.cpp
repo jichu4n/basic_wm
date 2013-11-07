@@ -112,6 +112,18 @@ void WindowManager::Run() {
       case ConfigureRequest:
         OnConfigureRequest(e.xconfigurerequest);
         break;
+      case ButtonPress:
+        OnButtonPress(e.xbutton);
+        break;
+      case ButtonRelease:
+        OnButtonRelease(e.xbutton);
+        break;
+      case MotionNotify:
+        // Skip any already pending motion events.
+        while (XCheckTypedWindowEvent(
+            display_, e.xmotion.window, MotionNotify, &e)) {}
+        OnMotionNotify(e.xmotion);
+        break;
       default:
         LOG(WARNING) << "Ignored event";
     }
@@ -156,6 +168,18 @@ void WindowManager::Frame(Window w) {
   XMapWindow(display_, frame);
   // 7. Save frame handle.
   clients_[w] = frame;
+  // 8. Grab universal window management actions on client window.
+  XGrabButton(
+      display_,
+      Button1,
+      Mod1Mask,
+      w,
+      false,
+      ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
+      GrabModeAsync,
+      GrabModeSync,
+      None,
+      None);
 
   LOG(INFO) << "Framed window " << w << " [" << frame << "]";
 }
@@ -219,6 +243,52 @@ void WindowManager::OnMapRequest(const XMapRequestEvent& e) {
 }
 
 void WindowManager::OnConfigureRequest(const XConfigureRequestEvent& e) {
+}
+
+void WindowManager::OnButtonPress(const XButtonEvent& e) {
+  CHECK(clients_.count(e.window));
+  const Window frame = clients_[e.window];
+
+  // 1. Save initial cursor position.
+  drag_start_pos_ = Position<int>(e.x_root, e.y_root);
+
+  // 2. Save initial window position.
+  Window returned_root;
+  int x, y;
+  unsigned width, height, border_width, depth;
+  CHECK(XGetGeometry(
+      display_,
+      frame,
+      &returned_root,
+      &x, &y,
+      &width, &height,
+      &border_width,
+      &depth));
+  drag_start_frame_pos_ = Position<int>(x, y);
+
+  // 3. Raise clicked window to top.
+  XRaiseWindow(display_, frame);
+}
+
+void WindowManager::OnButtonRelease(const XButtonEvent& e) {}
+
+void WindowManager::OnMotionNotify(const XMotionEvent& e) {
+  CHECK(clients_.count(e.window));
+  const Window frame = clients_[e.window];
+  // 1. Calculate dest window location.
+  const Position<int> drag_pos(e.x_root, e.y_root);
+  const Position<int> dest_frame_pos =
+      drag_start_frame_pos_ + (drag_pos - drag_start_pos_);
+  // 2. Move window.
+  XMoveWindow(
+      display_,
+      frame,
+      dest_frame_pos.x,
+      dest_frame_pos.y);
+
+  LOG(INFO) << "Move window " << e.window << " [" << frame << "] from "
+            << drag_start_frame_pos_.ToString() << " to "
+            << dest_frame_pos.ToString();
 }
 
 int WindowManager::OnXError(Display* display, XErrorEvent* e) {
