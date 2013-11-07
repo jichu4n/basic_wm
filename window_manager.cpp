@@ -177,6 +177,8 @@ void WindowManager::Unframe(Window w) {
   XRemoveFromSaveSet(display_, w);
   // 4. Destroy frame.
   XDestroyWindow(display_, frame);
+  // 5. Drop reference to frame handle.
+  clients_.erase(w);
 
   LOG(INFO) << "Unframed window " << w << " [" << frame << "]";
 }
@@ -190,22 +192,21 @@ void WindowManager::OnReparentNotify(const XReparentEvent& e) {}
 void WindowManager::OnMapNotify(const XMapEvent& e) {}
 
 void WindowManager::OnUnmapNotify(const XUnmapEvent& e) {
-  if (clients_.count(e.window)) {
-    // Skip the UnmapNotify event sent by reparenting a pre-existing mapped
-    // top-level window.
-    if (e.event != root_) {
-      // The unmapped window is a client of ours. Unframe it.
-      Unframe(e.window);
-    }
-  } else {
-    // The unmapped window is not a client, so must be a frame we created. In
-    // this case, we don't need to do anything.
-    CHECK(std::find_if(
-        clients_.begin(), clients_.end(),
-        [&](const std::pair<Window, Window>& client) {
-          return client.second == e.window;
-        }) != clients_.end());
+  // If the window is a client window we manage, unframe it upon UnmapNotify. We
+  // need the check because other than a client window, we can receive an
+  // UnmapNotify for
+  //     - A frame we just destroyed ourselves.
+  //     - A pre-existing and mapped top-level window we reparented.
+  if (!clients_.count(e.window)) {
+    LOG(INFO) << "Ignore UnmapNotify for non-client window " << e.window;
+    return;
   }
+  if (e.event == root_) {
+    LOG(INFO) << "Ignore UnmapNotify for reparented pre-existing window "
+              << e.window;
+    return;
+  }
+  Unframe(e.window);
 }
 
 void WindowManager::OnConfigureNotify(const XConfigureEvent& e) {}
