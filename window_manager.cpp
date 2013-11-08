@@ -366,7 +366,14 @@ void WindowManager::OnKeyPress(const XKeyEvent& e) {
     // Close window.
   } else if ((e.state & Mod1Mask) &&
              (e.keycode == XKeysymToKeycode(display_, XK_Tab))) {
-    // Circulate.
+    auto i = clients_.find(e.window);
+    CHECK(i != clients_.end());
+    ++i;
+    if (i == clients_.end()) {
+      i = clients_.begin();
+    }
+    XRaiseWindow(display_, i->second);
+    XSetInputFocus(display_, i->first, RevertToPointerRoot, CurrentTime);
   }
 }
 
