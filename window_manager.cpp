@@ -349,7 +349,7 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
               << drag_start_frame_pos_.ToString() << " to "
               << dest_frame_pos.ToString();
   } else if (e.state & Button3Mask) {
-    // alt + left button: Resize window.
+    // alt + right button: Resize window.
     const Size<int> dest_frame_size = drag_start_frame_size_ + delta;
     // 1. Resize frame.
     XResizeWindow(
