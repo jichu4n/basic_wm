@@ -83,6 +83,9 @@ class WindowManager {
   Position<int> drag_start_frame_pos_;
   // During a window move/resize, the initial size of the window.
   Size<int> drag_start_frame_size_;
+
+  // Atom constants.
+  const Atom WM_PROTOCOLS, WM_DELETE_WINDOW;
 };
 
 }

@@ -18,6 +18,7 @@
 
 #include "window_manager.hpp"
 #include <algorithm>
+#include <cstring>
 #include <glog/logging.h>
 extern "C" {
 #include <X11/Xutil.h>
@@ -42,7 +43,9 @@ std::unique_ptr<WindowManager> WindowManager::Create(
 
 WindowManager::WindowManager(Display* display)
     : display_(CHECK_NOTNULL(display)),
-      root_(DefaultRootWindow(display_)) {
+      root_(DefaultRootWindow(display_)),
+      WM_PROTOCOLS(XInternAtom(display_, "WM_PROTOCOLS", false)),
+      WM_DELETE_WINDOW(XInternAtom(display_, "WM_DELETE_WINDOW", false)) {
 }
 
 WindowManager::~WindowManager() {
@@ -363,7 +366,33 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
 void WindowManager::OnKeyPress(const XKeyEvent& e) {
   if ((e.state & Mod1Mask) &&
       (e.keycode == XKeysymToKeycode(display_, XK_F4))) {
-    // Close window.
+    // There are two ways to tell an X window to close. The first is to send it
+    // a message of type WM_PROTOCOLS and value WM_DELETE_WINDOW. If the client
+    // has not explicitly marked itself as supporting this more civilized
+    // behavior (using XSetWMProtocols()), we kill it with XKillClient().
+    Atom* supported_protocols;
+    int num_supported_protocols;
+    if (XGetWMProtocols(display_,
+                        e.window,
+                        &supported_protocols,
+                        &num_supported_protocols) &&
+        (std::find(supported_protocols,
+                   supported_protocols + num_supported_protocols,
+                   WM_DELETE_WINDOW) !=
+         supported_protocols + num_supported_protocols)) {
+      LOG(INFO) << "Gracefully deleting window " << e.window;
+      XEvent msg;
+      memset(&msg, 0, sizeof(msg));
+      msg.xclient.type = ClientMessage;
+      msg.xclient.message_type = WM_PROTOCOLS;
+      msg.xclient.window = e.window;
+      msg.xclient.format = 32;
+      msg.xclient.data.l[0] = WM_DELETE_WINDOW;
+      CHECK(XSendEvent(display_, e.window, false, 0, &msg));
+    } else {
+      LOG(INFO) << "Killing window " << e.window;
+      XKillClient(display_, e.window);
+    }
   } else if ((e.state & Mod1Mask) &&
              (e.keycode == XKeysymToKeycode(display_, XK_Tab))) {
     auto i = clients_.find(e.window);
