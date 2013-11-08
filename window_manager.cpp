@@ -193,7 +193,7 @@ void WindowManager::Frame(Window w) {
       GrabModeAsync,
       None,
       None);
-  //   b. Move windows with alt + right button.
+  //   b. Resize windows with alt + right button.
   XGrabButton(
       display_,
       Button3,
@@ -334,12 +334,11 @@ void WindowManager::OnButtonRelease(const XButtonEvent& e) {}
 void WindowManager::OnMotionNotify(const XMotionEvent& e) {
   CHECK(clients_.count(e.window));
   const Window frame = clients_[e.window];
-  // 1. Calculate dest window location.
   const Position<int> drag_pos(e.x_root, e.y_root);
   const Vector2D<int> delta = drag_pos - drag_start_pos_;
 
   if (e.state & Button1Mask ) {
-    // 2.a If moving, move window by delta.
+    // alt + left button: Move window.
     const Position<int> dest_frame_pos = drag_start_frame_pos_ + delta;
     XMoveWindow(
         display_,
@@ -350,12 +349,14 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
               << drag_start_frame_pos_.ToString() << " to "
               << dest_frame_pos.ToString();
   } else if (e.state & Button3Mask) {
-    // 2.b If resizing, resize by delta.
+    // alt + left button: Resize window.
     const Size<int> dest_frame_size = drag_start_frame_size_ + delta;
+    // 1. Resize frame.
     XResizeWindow(
         display_,
         frame,
         dest_frame_size.width, dest_frame_size.height);
+    // 2. Resize client window.
     XResizeWindow(
         display_,
         e.window,
@@ -366,6 +367,8 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
 void WindowManager::OnKeyPress(const XKeyEvent& e) {
   if ((e.state & Mod1Mask) &&
       (e.keycode == XKeysymToKeycode(display_, XK_F4))) {
+    // alt + f4: Close window.
+    //
     // There are two ways to tell an X window to close. The first is to send it
     // a message of type WM_PROTOCOLS and value WM_DELETE_WINDOW. If the client
     // has not explicitly marked itself as supporting this more civilized
@@ -395,6 +398,7 @@ void WindowManager::OnKeyPress(const XKeyEvent& e) {
     }
   } else if ((e.state & Mod1Mask) &&
              (e.keycode == XKeysymToKeycode(display_, XK_Tab))) {
+    // alt + tab: Switch window.
     auto i = clients_.find(e.window);
     CHECK(i != clients_.end());
     ++i;
