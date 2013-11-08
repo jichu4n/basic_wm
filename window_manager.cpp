@@ -19,6 +19,9 @@
 #include "window_manager.hpp"
 #include <algorithm>
 #include <glog/logging.h>
+extern "C" {
+#include <X11/Xutil.h>
+}
 #include "util.hpp"
 
 namespace xon {
@@ -124,6 +127,12 @@ void WindowManager::Run() {
             display_, e.xmotion.window, MotionNotify, &e)) {}
         OnMotionNotify(e.xmotion);
         break;
+      case KeyPress:
+        OnKeyPress(e.xkey);
+        break;
+      case KeyRelease:
+        OnKeyRelease(e.xkey);
+        break;
       default:
         LOG(WARNING) << "Ignored event";
     }
@@ -169,6 +178,7 @@ void WindowManager::Frame(Window w) {
   // 7. Save frame handle.
   clients_[w] = frame;
   // 8. Grab universal window management actions on client window.
+  //   a. Move windows with alt + left button.
   XGrabButton(
       display_,
       Button1,
@@ -177,9 +187,10 @@ void WindowManager::Frame(Window w) {
       false,
       ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
       GrabModeAsync,
-      GrabModeSync,
+      GrabModeAsync,
       None,
       None);
+  //   b. Move windows with alt + right button.
   XGrabButton(
       display_,
       Button3,
@@ -188,9 +199,27 @@ void WindowManager::Frame(Window w) {
       false,
       ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
       GrabModeAsync,
-      GrabModeSync,
+      GrabModeAsync,
       None,
       None);
+  //   c. Kill windows with alt + f4.
+  XGrabKey(
+      display_,
+      XKeysymToKeycode(display_, XK_F4),
+      Mod1Mask,
+      w,
+      false,
+      GrabModeAsync,
+      GrabModeAsync);
+  //   d. Switch windows with alt + tab.
+  XGrabKey(
+      display_,
+      XKeysymToKeycode(display_, XK_Tab),
+      Mod1Mask,
+      w,
+      false,
+      GrabModeAsync,
+      GrabModeAsync);
 
   LOG(INFO) << "Framed window " << w << " [" << frame << "]";
 }
@@ -306,7 +335,7 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
   const Position<int> drag_pos(e.x_root, e.y_root);
   const Vector2D<int> delta = drag_pos - drag_start_pos_;
 
-  if (e.state & Button1Mask) {
+  if (e.state & Button1Mask ) {
     // 2.a If moving, move window by delta.
     const Position<int> dest_frame_pos = drag_start_frame_pos_ + delta;
     XMoveWindow(
@@ -330,6 +359,18 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
         dest_frame_size.width, dest_frame_size.height);
   }
 }
+
+void WindowManager::OnKeyPress(const XKeyEvent& e) {
+  if ((e.state & Mod1Mask) &&
+      (e.keycode == XKeysymToKeycode(display_, XK_F4))) {
+    // Close window.
+  } else if ((e.state & Mod1Mask) &&
+             (e.keycode == XKeysymToKeycode(display_, XK_Tab))) {
+    // Circulate.
+  }
+}
+
+void WindowManager::OnKeyRelease(const XKeyEvent& e) {}
 
 int WindowManager::OnXError(Display* display, XErrorEvent* e) {
   const int MAX_ERROR_TEXT_LENGTH = 1024;

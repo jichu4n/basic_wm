@@ -65,6 +65,8 @@ class WindowManager {
   void OnButtonPress(const XButtonEvent& e);
   void OnButtonRelease(const XButtonEvent& e);
   void OnMotionNotify(const XMotionEvent& e);
+  void OnKeyPress(const XKeyEvent& e);
+  void OnKeyRelease(const XKeyEvent& e);
 
   // Xlib error handler.
   static int OnXError(Display* display, XErrorEvent* e);

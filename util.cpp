@@ -179,6 +179,15 @@ std::string ToString(const XEvent& e) {
       properties.emplace_back(
           "time", ToString(e.xmotion.time));
       break;
+    case KeyPress:
+    case KeyRelease:
+      properties.emplace_back(
+          "window", ToString(e.xkey.window));
+      properties.emplace_back(
+          "state", ToString(e.xkey.state));
+      properties.emplace_back(
+          "keycode", ToString(e.xkey.keycode));
+      break;
     default:
       // No properties are printed for unused events.
       break;
