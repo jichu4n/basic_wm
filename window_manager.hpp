@@ -19,7 +19,6 @@
 #ifndef WINDOW_MANAGER_HPP
 #define WINDOW_MANAGER_HPP
 
-#include <list>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -39,8 +38,7 @@ class WindowManager {
 
   ~WindowManager();
 
-  // The entry point to this class. Enters the main event loop, and returns only
-  // when window management on this screen is terminated by the user.
+  // The entry point to this class. Enters the main event loop.
   void Run();
 
  private:
@@ -48,10 +46,10 @@ class WindowManager {
   WindowManager(Display* display);
   // Frames a top-level window.
   void Frame(Window w);
-  // Unframes a (previously) top-level window.
+  // Unframes a client window.
   void Unframe(Window w);
 
-  // Event handlers. These can be overridden by child classes.
+  // Event handlers.
   void OnCreateNotify(const XCreateWindowEvent& e);
   void OnDestroyNotify(const XDestroyWindowEvent& e);
   void OnReparentNotify(const XReparentEvent& e);
@@ -75,15 +73,18 @@ class WindowManager {
   const Window root_;
   // Maps top-level windows to their frame windows.
   std::unordered_map<Window, Window> clients_;
-  // During a window move/resize, the location of the initial cursor position.
+
+  // The cursor position at the start of a window move/resize.
   Position<int> drag_start_pos_;
-  // During a window move/resize, the location of the initial window position.
+  // The position of the affected window at the start of a window
+  // move/resize.
   Position<int> drag_start_frame_pos_;
-  // During a window move/resize, the initial size of the window.
+  // The size of the affected window at the start of a window move/resize.
   Size<int> drag_start_frame_size_;
 
   // Atom constants.
-  const Atom WM_PROTOCOLS, WM_DELETE_WINDOW;
+  const Atom WM_PROTOCOLS;
+  const Atom WM_DELETE_WINDOW;
 };
 
 #endif
