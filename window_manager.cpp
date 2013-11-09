@@ -141,7 +141,7 @@ void WindowManager::Run() {
 }
 
 void WindowManager::Frame(Window w) {
-  // Visual settings of the frame to create.
+  // Visual properties of the frame to create.
   const unsigned int BORDER_WIDTH = 3;
   const unsigned long BORDER_COLOR = 0xff0000;
   const unsigned long BG_COLOR = 0x0000ff;
@@ -172,7 +172,9 @@ void WindowManager::Frame(Window w) {
   XAddToSaveSet(display_, w);
   // 5. Reparent client window.
   XReparentWindow(
-      display_, w, frame,
+      display_,
+      w,
+      frame,
       0, 0);  // Offset of client window within frame.
   // 6. Map frame.
   XMapWindow(display_, frame);
