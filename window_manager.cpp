@@ -388,6 +388,7 @@ void WindowManager::OnKeyPress(const XKeyEvent& e) {
                    WM_DELETE_WINDOW) !=
          supported_protocols + num_supported_protocols)) {
       LOG(INFO) << "Gracefully deleting window " << e.window;
+      // 1. Construct message.
       XEvent msg;
       memset(&msg, 0, sizeof(msg));
       msg.xclient.type = ClientMessage;
@@ -395,6 +396,7 @@ void WindowManager::OnKeyPress(const XKeyEvent& e) {
       msg.xclient.window = e.window;
       msg.xclient.format = 32;
       msg.xclient.data.l[0] = WM_DELETE_WINDOW;
+      // 2. Send message to window to be closed.
       CHECK(XSendEvent(display_, e.window, false, 0, &msg));
     } else {
       LOG(INFO) << "Killing window " << e.window;
@@ -403,12 +405,14 @@ void WindowManager::OnKeyPress(const XKeyEvent& e) {
   } else if ((e.state & Mod1Mask) &&
              (e.keycode == XKeysymToKeycode(display_, XK_Tab))) {
     // alt + tab: Switch window.
+    // 1. Find next window.
     auto i = clients_.find(e.window);
     CHECK(i != clients_.end());
     ++i;
     if (i == clients_.end()) {
       i = clients_.begin();
     }
+    // 2. Raise and set focus.
     XRaiseWindow(display_, i->second);
     XSetInputFocus(display_, i->first, RevertToPointerRoot, CurrentTime);
   }
