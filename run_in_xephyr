@@ -21,8 +21,8 @@
 
 set -e
 
-# 1. Build Xon binary.
-scons xon
+# 1. Build binary.
+scons basic_wm
 
 # 2. Run.
 #

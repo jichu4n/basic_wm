@@ -20,9 +20,6 @@
 #include <algorithm>
 #include <sstream>
 #include <vector>
-#include "types.hpp"
-
-namespace xon {
 
 std::string ToString(const XEvent& e) {
   static const char* const X_EVENT_TYPE_NAMES[] = {
@@ -354,6 +351,4 @@ std::string XRequestCodeToString(unsigned char request_code) {
       "NoOperation",
   };
   return X_REQUEST_CODE_NAMES[request_code];
-}
-
 }

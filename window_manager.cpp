@@ -25,8 +25,6 @@ extern "C" {
 }
 #include "util.hpp"
 
-namespace xon {
-
 std::unique_ptr<WindowManager> WindowManager::Create(
     const std::string& display_str) {
   // 1. Open X display.
@@ -67,7 +65,7 @@ void WindowManager::Run() {
   //     i. Query existing top-level windows.
   Window returned_root, returned_parent;
   Window* top_level_windows;
-  unsigned num_top_level_windows;
+  unsigned int num_top_level_windows;
   CHECK(XQueryTree(
         display_,
         root_,
@@ -77,7 +75,7 @@ void WindowManager::Run() {
         &num_top_level_windows));
   CHECK_EQ(returned_root, root_);
   //     ii. Frame each top-level window.
-  for (int i = 0; i < num_top_level_windows; ++i) {
+  for (unsigned int i = 0; i < num_top_level_windows; ++i) {
     Frame(top_level_windows[i]);
   }
   //     iii. Free top-level window array.
@@ -428,6 +426,4 @@ int WindowManager::OnXError(Display* display, XErrorEvent* e) {
              << "    Resource ID: " << e->resourceid;
   // The return value is ignored.
   return 0;
-}
-
 }

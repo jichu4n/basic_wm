@@ -16,13 +16,13 @@
 #                                                                             #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# xinitrc file for testing Xon.
+# xinitrc file for testing our window manager.
 
 xclock &
 xeyes &
 
-sleep 2 && terminator &
+sleep 2 && xterm &
 
 export GLOG_logtostderr=1
-exec valgrind ./xon
+exec valgrind ./basic_wm
 

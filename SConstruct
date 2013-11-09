@@ -16,8 +16,6 @@
 #                                                                             #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Main build file for Xon.
-
 import os
 
 
@@ -26,29 +24,21 @@ env = Environment()
 
 
 # Set up build environment.
-env.Replace(
-    CXX='clang++')
 env.Append(
     CXXFLAGS=[
-        '-std=c++11',
+        '-std=c++0x',
         '-Wall',
         '-g',
         ],
     ENV={
         # For running commands.
         'PATH': os.environ.get('PATH', ''),
-        # For running Xephyr.
-        'DISPLAY': os.environ.get('DISPLAY', ':0'),
         # Enables color output from Clang++.
         'TERM': os.environ.get('TERM', ''),
         })
-# Dependencies.
 LIBS = [
-    'libgflags',
     'libglog',
     'x11',
-    'x11-xcb',
-    'xcb',
     ]
 for lib in LIBS:
   env.ParseConfig(
@@ -56,7 +46,7 @@ for lib in LIBS:
 
 
 # Main program.
-xon = env.Program(
-    'xon',
+env.Program(
+    'basic_wm',
     Glob('*.cpp'))
 

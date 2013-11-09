@@ -16,15 +16,82 @@
  *                                                                           *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef XON_UTIL_HPP
-#define XON_UTIL_HPP
+#ifndef UTIL_HPP
+#define UTIL_HPP
 
+#include <ostream>
 #include <string>
 extern "C" {
 #include <X11/Xlib.h>
 }
 
-namespace xon {
+// Represents a 2D size.
+template <typename T>
+struct Size {
+  T width, height;
+
+  Size() = default;
+  Size(T w, T h)
+      : width(w), height(h) {
+  }
+
+  std::string ToString() const;
+};
+
+// Outputs a Size<T> as a string to a std::ostream.
+template <typename T>
+std::ostream& operator << (std::ostream& out, const Size<T>& size);
+
+
+// Represents a 2D position.
+template <typename T>
+struct Position {
+  T x, y;
+
+  Position() = default;
+  Position(T _x, T _y)
+      : x(_x), y(_y) {
+  }
+
+  std::string ToString() const;
+};
+
+// Represents a 2D vector.
+template <typename T>
+struct Vector2D {
+  T x, y;
+
+  Vector2D() = default;
+  Vector2D(T _x, T _y)
+      : x(_x), y(_y) {
+  }
+
+  std::string ToString() const;
+};
+
+// Outputs a Size<T> as a string to a std::ostream.
+template <typename T>
+std::ostream& operator << (std::ostream& out, const Position<T>& pos);
+
+// Position operators.
+template <typename T>
+Vector2D<T> operator - (const Position<T>& a, const Position<T>& b);
+template <typename T>
+Position<T> operator + (const Position<T>& a, const Vector2D<T> &v);
+template <typename T>
+Position<T> operator + (const Vector2D<T> &v, const Position<T>& a);
+template <typename T>
+Position<T> operator - (const Position<T>& a, const Vector2D<T> &v);
+
+// Size operators.
+template <typename T>
+Vector2D<T> operator - (const Size<T>& a, const Size<T>& b);
+template <typename T>
+Size<T> operator + (const Size<T>& a, const Vector2D<T> &v);
+template <typename T>
+Size<T> operator + (const Vector2D<T> &v, const Size<T>& a);
+template <typename T>
+Size<T> operator - (const Size<T>& a, const Vector2D<T> &v);
 
 // Joins a container of elements into a single string, with elements separated
 // by a delimiter. Any element can be used as long as an operator << on ostream
@@ -55,7 +122,6 @@ extern std::string XConfigureWindowValueMaskToString(unsigned long value_mask);
 // Returns the name of an X request code.
 extern std::string XRequestCodeToString(unsigned char request_code);
 
-}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                               IMPLEMENTATION                              *
@@ -64,7 +130,81 @@ extern std::string XRequestCodeToString(unsigned char request_code);
 #include <vector>
 #include <sstream>
 
-namespace xon {
+template <typename T>
+std::string Size<T>::ToString() const {
+  std::ostringstream out;
+  out << width << 'x' << height;
+  return out.str();
+}
+
+template <typename T>
+std::ostream& operator << (std::ostream& out, const Size<T>& size) {
+  return out << size.ToString();
+}
+
+template <typename T>
+std::string Position<T>::ToString() const {
+  std::ostringstream out;
+  out << "(" << x << ", " << y << ")";
+  return out.str();
+}
+
+template <typename T>
+std::ostream& operator << (std::ostream& out, const Position<T>& size) {
+  return out << size.ToString();
+}
+
+template <typename T>
+std::string Vector2D<T>::ToString() const {
+  std::ostringstream out;
+  out << "(" << x << ", " << y << ")";
+  return out.str();
+}
+
+template <typename T>
+std::ostream& operator << (std::ostream& out, const Vector2D<T>& size) {
+  return out << size.ToString();
+}
+
+template <typename T>
+Vector2D<T> operator - (const Position<T>& a, const Position<T>& b) {
+  return Vector2D<T>(a.x - b.x, a.y - b.y);
+}
+
+template <typename T>
+Position<T> operator + (const Position<T>& a, const Vector2D<T> &v) {
+  return Position<T>(a.x + v.x, a.y + v.y);
+}
+
+template <typename T>
+Position<T> operator + (const Vector2D<T> &v, const Position<T>& a) {
+  return Position<T>(a.x + v.x, a.y + v.y);
+}
+
+template <typename T>
+Position<T> operator - (const Position<T>& a, const Vector2D<T> &v) {
+  return Position<T>(a.x - v.x, a.y - v.y);
+}
+
+template <typename T>
+Vector2D<T> operator - (const Size<T>& a, const Size<T>& b) {
+  return Vector2D<T>(a.width - b.width, a.height - b.height);
+}
+
+template <typename T>
+Size<T> operator + (const Size<T>& a, const Vector2D<T> &v) {
+  return Size<T>(a.width + v.x, a.height + v.y);
+}
+
+template <typename T>
+Size<T> operator + (const Vector2D<T> &v, const Size<T>& a) {
+  return Size<T>(a.width + v.x, a.height + v.y);
+}
+
+template <typename T>
+Size<T> operator - (const Size<T>& a, const Vector2D<T> &v) {
+  return Size<T>(a.width - v.x, a.height - v.y);
+}
 
 template <typename Container>
 std::string Join(const Container& container, const std::string& delimiter) {
@@ -97,8 +237,6 @@ std::string ToString(const T& x) {
   std::ostringstream out;
   out << x;
   return out.str();
-}
-
 }
 
 #endif

@@ -20,8 +20,6 @@
 #include <glog/logging.h>
 #include "window_manager.hpp"
 
-using xon::WindowManager;
-
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
 

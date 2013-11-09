@@ -16,8 +16,8 @@
  *                                                                           *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef XON_WINDOW_MANAGER_HPP
-#define XON_WINDOW_MANAGER_HPP
+#ifndef WINDOW_MANAGER_HPP
+#define WINDOW_MANAGER_HPP
 
 #include <list>
 #include <memory>
@@ -26,9 +26,7 @@
 extern "C" {
 #include <X11/Xlib.h>
 }
-#include "types.hpp"
-
-namespace xon {
+#include "util.hpp"
 
 // Implementation of a window manager for an X screen.
 class WindowManager {
@@ -87,7 +85,5 @@ class WindowManager {
   // Atom constants.
   const Atom WM_PROTOCOLS, WM_DELETE_WINDOW;
 };
-
-}
 
 #endif
