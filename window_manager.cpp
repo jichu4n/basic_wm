@@ -350,7 +350,11 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
               << dest_frame_pos.ToString();
   } else if (e.state & Button3Mask) {
     // alt + right button: Resize window.
-    const Size<int> dest_frame_size = drag_start_frame_size_ + delta;
+    // Window dimensions cannot be negative.
+    const Vector2D<int> size_delta(
+        std::max(delta.x, -drag_start_frame_size_.width),
+        std::max(delta.y, -drag_start_frame_size_.height));
+    const Size<int> dest_frame_size = drag_start_frame_size_ + size_delta;
     // 1. Resize frame.
     XResizeWindow(
         display_,
