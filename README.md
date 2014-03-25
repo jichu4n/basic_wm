@@ -38,3 +38,14 @@ Once you have all the dependencies, building and running it is as simple as:
 
 This will launch a simple Xephyr session like in the following screenshot:
 ![Screenshot](basic_wm_screenshot.png)
+
+
+Usage
+-----
+
+Supported keyboard shortcuts:
+
+* **Alt + Left Click**: Move window
+* **Alt + Right Click**: Resize window
+* **Alt + F4**: Close window
+* **Alt + Tab**: Switch window
