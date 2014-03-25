@@ -37,4 +37,4 @@ Once you have all the dependencies, building and running it is as simple as:
     ./build_and_run.sh
 
 This will launch a simple Xephyr session like in the following screenshot:
-![Screenshot](http://seasonofcode.com/assets/files/basic_wm_screenshot.png =400)
+![Screenshot](basic_wm_screenshot.png =400)
