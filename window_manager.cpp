@@ -17,12 +17,12 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "window_manager.hpp"
-#include <algorithm>
-#include <cstring>
-#include <glog/logging.h>
 extern "C" {
 #include <X11/Xutil.h>
 }
+#include <cstring>
+#include <algorithm>
+#include <glog/logging.h>
 #include "util.hpp"
 
 std::unique_ptr<WindowManager> WindowManager::Create(

@@ -19,11 +19,11 @@
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
-#include <ostream>
-#include <string>
 extern "C" {
 #include <X11/Xlib.h>
 }
+#include <ostream>
+#include <string>
 
 // Represents a 2D size.
 template <typename T>

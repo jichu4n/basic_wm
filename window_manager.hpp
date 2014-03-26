@@ -19,12 +19,12 @@
 #ifndef WINDOW_MANAGER_HPP
 #define WINDOW_MANAGER_HPP
 
-#include <memory>
-#include <string>
-#include <unordered_map>
 extern "C" {
 #include <X11/Xlib.h>
 }
+#include <memory>
+#include <string>
+#include <unordered_map>
 #include "util.hpp"
 
 // Implementation of a window manager for an X screen.
