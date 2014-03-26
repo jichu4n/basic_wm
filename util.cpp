@@ -342,12 +342,12 @@ std::string XRequestCodeToString(unsigned char request_code) {
       "SetAccessControl",
       "SetCloseDownMode",
       "KillClient",
-      "RotateProperties	",
-      "ForceScreenSaver	",
+      "RotateProperties",
+      "ForceScreenSaver",
       "SetPointerMapping",
       "GetPointerMapping",
-      "SetModifierMapping	",
-      "GetModifierMapping	",
+      "SetModifierMapping",
+      "GetModifierMapping",
       "NoOperation",
   };
   return X_REQUEST_CODE_NAMES[request_code];
