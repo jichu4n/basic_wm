@@ -67,12 +67,12 @@ void WindowManager::Run() {
   Window* top_level_windows;
   unsigned int num_top_level_windows;
   CHECK(XQueryTree(
-        display_,
-        root_,
-        &returned_root,
-        &returned_parent,
-        &top_level_windows,
-        &num_top_level_windows));
+      display_,
+      root_,
+      &returned_root,
+      &returned_parent,
+      &top_level_windows,
+      &num_top_level_windows));
   CHECK_EQ(returned_root, root_);
   //     ii. Frame each top-level window.
   for (unsigned int i = 0; i < num_top_level_windows; ++i) {
@@ -344,10 +344,6 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
         display_,
         frame,
         dest_frame_pos.x, dest_frame_pos.y);
-
-    LOG(INFO) << "Move window " << e.window << " [" << frame << "] from "
-              << drag_start_frame_pos_.ToString() << " to "
-              << dest_frame_pos.ToString();
   } else if (e.state & Button3Mask) {
     // alt + right button: Resize window.
     // Window dimensions cannot be negative.
