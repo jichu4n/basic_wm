@@ -1,8 +1,8 @@
 Basic Window Manager
 ====================
 
-This is a very simple X window manager that demonstrates how to implement the
-fundamental functionality of a window manager:
+This is a very simple reparenting, non-compositing X window manager that
+demonstrates how to implement the fundamental functionality of a window manager:
 
   * Managing the life cycle of windows
   * Reparenting windows
@@ -21,7 +21,7 @@ To build this example window manager, you will need:
 
 To run and test it, you will need:
 
-* [Xephyr](https://code.google.com/p/google-glog/)
+* [Xephyr](http://www.freedesktop.org/wiki/Software/Xephyr/)
 * `xinit`
 * Random X utilities such as `xclock`, `xeyes`, and `xterm` to play with
 
