@@ -23,6 +23,7 @@ extern "C" {
 #include <X11/Xlib.h>
 }
 #include <memory>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include "util.hpp"
@@ -66,6 +67,15 @@ class WindowManager {
 
   // Xlib error handler.
   static int OnXError(Display* display, XErrorEvent* e);
+  // Xlib error handler used to determine whether another window manager is
+  // running. It is set as the error handler right before selecting substructure
+  // redirection mask on the root window, so it is invoked if and only if
+  // another window manager is running.
+  static int OnWMDetected(Display* display, XErrorEvent* e);
+  // Whether an existing window manager has been detected. Set by OnWMDetected.
+  static bool wm_detected_;
+  // A mutex for protecting wm_detected_.
+  static std::mutex wm_detected_mutex_;
 
   // Handle to the underlying Xlib Display struct.
   Display* display_;

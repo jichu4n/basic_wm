@@ -25,6 +25,9 @@ extern "C" {
 #include <glog/logging.h>
 #include "util.hpp"
 
+bool WindowManager::wm_detected_;
+std::mutex WindowManager::wm_detected_mutex_;
+
 std::unique_ptr<WindowManager> WindowManager::Create(
     const std::string& display_str) {
   // 1. Open X display.
@@ -52,13 +55,26 @@ WindowManager::~WindowManager() {
 
 void WindowManager::Run() {
   // 1. Initialization.
-  //   a. Set error handler.
+  //   a. Select events on root window. Use a special error handler so we can
+  //   exit gracefully if another window manager is already running.
+  {
+    std::lock_guard<std::mutex> lock(wm_detected_mutex_);
+
+    wm_detected_ = false;
+    XSetErrorHandler(&WindowManager::OnWMDetected);
+    XSelectInput(
+        display_,
+        root_,
+        SubstructureRedirectMask | SubstructureNotifyMask);
+    XSync(display_, false);
+    if (wm_detected_) {
+      LOG(ERROR) << "Detected another window manager on display "
+                 << XDisplayString(display_);
+      return;
+    }
+  }
+  //   b. Set error handler.
   XSetErrorHandler(&WindowManager::OnXError);
-  //   b. Select events on root window.
-  XSelectInput(
-      display_,
-      root_,
-      SubstructureRedirectMask | SubstructureNotifyMask);
   //   c. Grab X server to prevent windows from changing under us.
   XGrabServer(display_);
   //   d. Reparent existing top-level windows.
@@ -426,6 +442,17 @@ int WindowManager::OnXError(Display* display, XErrorEvent* e) {
              << "    Error code: " << int(e->error_code)
              << " - " << error_text << "\n"
              << "    Resource ID: " << e->resourceid;
+  // The return value is ignored.
+  return 0;
+}
+
+int WindowManager::OnWMDetected(Display* display, XErrorEvent* e) {
+  // In the case of an already running window manager, the error code from
+  // XSelectInput is BadAccess. We don't expect this handler to receive any
+  // other errors.
+  CHECK_EQ(e->error_code, BadAccess);
+  // Set flag.
+  wm_detected_ = true;
   // The return value is ignored.
   return 0;
 }
