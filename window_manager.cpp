@@ -450,7 +450,7 @@ int WindowManager::OnWMDetected(Display* display, XErrorEvent* e) {
   // In the case of an already running window manager, the error code from
   // XSelectInput is BadAccess. We don't expect this handler to receive any
   // other errors.
-  CHECK_EQ(e->error_code, BadAccess);
+  CHECK_EQ(static_cast<int>(e->error_code), BadAccess);
   // Set flag.
   wm_detected_ = true;
   // The return value is ignored.
