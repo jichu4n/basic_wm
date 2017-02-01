@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                           *
- *  Copyright (C) 2013 Chuan Ji <jichuan89@gmail.com>                        *
+ *  Copyright (C) 2013-2017 Chuan Ji <ji@chu4n.com>                          *
  *                                                                           *
  *  Licensed under the Apache License, Version 2.0 (the "License");          *
  *  you may not use this file except in compliance with the License.         *
@@ -25,11 +25,15 @@ extern "C" {
 #include <glog/logging.h>
 #include "util.hpp"
 
-bool WindowManager::wm_detected_;
-std::mutex WindowManager::wm_detected_mutex_;
+using ::std::max;
+using ::std::mutex;
+using ::std::string;
+using ::std::unique_ptr;
 
-std::unique_ptr<WindowManager> WindowManager::Create(
-    const std::string& display_str) {
+bool WindowManager::wm_detected_;
+mutex WindowManager::wm_detected_mutex_;
+
+unique_ptr<WindowManager> WindowManager::Create(const string& display_str) {
   // 1. Open X display.
   const char* display_c_str =
         display_str.empty() ? nullptr : display_str.c_str();
@@ -39,7 +43,7 @@ std::unique_ptr<WindowManager> WindowManager::Create(
     return nullptr;
   }
   // 2. Construct WindowManager instance.
-  return std::unique_ptr<WindowManager>(new WindowManager(display));
+  return unique_ptr<WindowManager>(new WindowManager(display));
 }
 
 WindowManager::WindowManager(Display* display)
@@ -58,7 +62,7 @@ void WindowManager::Run() {
   //   a. Select events on root window. Use a special error handler so we can
   //   exit gracefully if another window manager is already running.
   {
-    std::lock_guard<std::mutex> lock(wm_detected_mutex_);
+    ::std::lock_guard<mutex> lock(wm_detected_mutex_);
 
     wm_detected_ = false;
     XSetErrorHandler(&WindowManager::OnWMDetected);
@@ -364,8 +368,8 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
     // alt + right button: Resize window.
     // Window dimensions cannot be negative.
     const Vector2D<int> size_delta(
-        std::max(delta.x, -drag_start_frame_size_.width),
-        std::max(delta.y, -drag_start_frame_size_.height));
+        max(delta.x, -drag_start_frame_size_.width),
+        max(delta.y, -drag_start_frame_size_.height));
     const Size<int> dest_frame_size = drag_start_frame_size_ + size_delta;
     // 1. Resize frame.
     XResizeWindow(
@@ -395,9 +399,9 @@ void WindowManager::OnKeyPress(const XKeyEvent& e) {
                         e.window,
                         &supported_protocols,
                         &num_supported_protocols) &&
-        (std::find(supported_protocols,
-                   supported_protocols + num_supported_protocols,
-                   WM_DELETE_WINDOW) !=
+        (::std::find(supported_protocols,
+                     supported_protocols + num_supported_protocols,
+                     WM_DELETE_WINDOW) !=
          supported_protocols + num_supported_protocols)) {
       LOG(INFO) << "Gracefully deleting window " << e.window;
       // 1. Construct message.

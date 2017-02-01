@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                           *
- *  Copyright (C) 2013 Chuan Ji <jichuan89@gmail.com>                        *
+ *  Copyright (C) 2013-2017 Chuan Ji <ji@chu4n.com>                          *
  *                                                                           *
  *  Licensed under the Apache License, Version 2.0 (the "License");          *
  *  you may not use this file except in compliance with the License.         *
@@ -21,7 +21,12 @@
 #include <sstream>
 #include <vector>
 
-std::string ToString(const XEvent& e) {
+using ::std::string;
+using ::std::vector;
+using ::std::pair;
+using ::std::ostringstream;
+
+string ToString(const XEvent& e) {
   static const char* const X_EVENT_TYPE_NAMES[] = {
       "",
       "",
@@ -61,7 +66,7 @@ std::string ToString(const XEvent& e) {
   };
 
   // 1. Compile properties we care about.
-  std::vector<std::pair<std::string, std::string>> properties;
+  vector<pair<string, string>> properties;
   switch (e.type) {
     case CreateNotify:
       properties.emplace_back(
@@ -191,17 +196,17 @@ std::string ToString(const XEvent& e) {
   }
 
   // 2. Build final string.
-  const std::string properties_string = Join(
-      properties, ", ", [] (const std::pair<std::string, std::string> &pair) {
+  const string properties_string = Join(
+      properties, ", ", [] (const pair<string, string> &pair) {
         return pair.first + ": " + pair.second;
       });
-  std::ostringstream out;
+  ostringstream out;
   out << X_EVENT_TYPE_NAMES[e.type] << " { " << properties_string << " }";
   return out.str();
 }
 
-std::string XConfigureWindowValueMaskToString(unsigned long value_mask) {
-  std::vector<std::string> masks;
+string XConfigureWindowValueMaskToString(unsigned long value_mask) {
+  vector<string> masks;
   if (value_mask & CWX) {
     masks.emplace_back("X");
   }
@@ -226,7 +231,7 @@ std::string XConfigureWindowValueMaskToString(unsigned long value_mask) {
   return Join(masks, "|");
 }
 
-std::string XRequestCodeToString(unsigned char request_code) {
+string XRequestCodeToString(unsigned char request_code) {
   static const char* const X_REQUEST_CODE_NAMES[] = {
       "",
       "CreateWindow",

@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                           *
- *  Copyright (C) 2013 Chuan Ji <jichuan89@gmail.com>                        *
+ *  Copyright (C) 2013-2017 Chuan Ji <ji@chu4n.com>                          *
  *                                                                           *
  *  Licensed under the Apache License, Version 2.0 (the "License");          *
  *  you may not use this file except in compliance with the License.         *
@@ -35,12 +35,12 @@ struct Size {
       : width(w), height(h) {
   }
 
-  std::string ToString() const;
+  ::std::string ToString() const;
 };
 
 // Outputs a Size<T> as a string to a std::ostream.
 template <typename T>
-std::ostream& operator << (std::ostream& out, const Size<T>& size);
+::std::ostream& operator << (::std::ostream& out, const Size<T>& size);
 
 
 // Represents a 2D position.
@@ -53,7 +53,7 @@ struct Position {
       : x(_x), y(_y) {
   }
 
-  std::string ToString() const;
+  ::std::string ToString() const;
 };
 
 // Represents a 2D vector.
@@ -66,12 +66,12 @@ struct Vector2D {
       : x(_x), y(_y) {
   }
 
-  std::string ToString() const;
+  ::std::string ToString() const;
 };
 
 // Outputs a Size<T> as a string to a std::ostream.
 template <typename T>
-std::ostream& operator << (std::ostream& out, const Position<T>& pos);
+::std::ostream& operator << (::std::ostream& out, const Position<T>& pos);
 
 // Position operators.
 template <typename T>
@@ -97,30 +97,30 @@ Size<T> operator - (const Size<T>& a, const Vector2D<T> &v);
 // by a delimiter. Any element can be used as long as an operator << on ostream
 // is defined.
 template <typename Container>
-std::string Join(const Container& container, const std::string& delimiter);
+::std::string Join(const Container& container, const ::std::string& delimiter);
 
 // Joins a container of elements into a single string, with elements separated
 // by a delimiter. The elements are converted to string using a converter
 // function.
 template <typename Container, typename Converter>
-std::string Join(
+::std::string Join(
     const Container& container,
-    const std::string& delimiter,
+    const ::std::string& delimiter,
     Converter converter);
 
 // Returns a string representation of a built-in type that we already have
 // ostream support for.
 template <typename T>
-std::string ToString(const T& x);
+::std::string ToString(const T& x);
 
 // Returns a string describing an X event for debugging purposes.
-extern std::string ToString(const XEvent& e);
+extern ::std::string ToString(const XEvent& e);
 
 // Returns a string describing an X window configuration value mask.
-extern std::string XConfigureWindowValueMaskToString(unsigned long value_mask);
+extern ::std::string XConfigureWindowValueMaskToString(unsigned long value_mask);
 
 // Returns the name of an X request code.
-extern std::string XRequestCodeToString(unsigned char request_code);
+extern ::std::string XRequestCodeToString(unsigned char request_code);
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -131,38 +131,38 @@ extern std::string XRequestCodeToString(unsigned char request_code);
 #include <sstream>
 
 template <typename T>
-std::string Size<T>::ToString() const {
-  std::ostringstream out;
+::std::string Size<T>::ToString() const {
+  ::std::ostringstream out;
   out << width << 'x' << height;
   return out.str();
 }
 
 template <typename T>
-std::ostream& operator << (std::ostream& out, const Size<T>& size) {
+::std::ostream& operator << (::std::ostream& out, const Size<T>& size) {
   return out << size.ToString();
 }
 
 template <typename T>
-std::string Position<T>::ToString() const {
-  std::ostringstream out;
+::std::string Position<T>::ToString() const {
+  ::std::ostringstream out;
   out << "(" << x << ", " << y << ")";
   return out.str();
 }
 
 template <typename T>
-std::ostream& operator << (std::ostream& out, const Position<T>& size) {
+::std::ostream& operator << (::std::ostream& out, const Position<T>& size) {
   return out << size.ToString();
 }
 
 template <typename T>
-std::string Vector2D<T>::ToString() const {
-  std::ostringstream out;
+::std::string Vector2D<T>::ToString() const {
+  ::std::ostringstream out;
   out << "(" << x << ", " << y << ")";
   return out.str();
 }
 
 template <typename T>
-std::ostream& operator << (std::ostream& out, const Vector2D<T>& size) {
+::std::ostream& operator << (::std::ostream& out, const Vector2D<T>& size) {
   return out << size.ToString();
 }
 
@@ -207,8 +207,8 @@ Size<T> operator - (const Size<T>& a, const Vector2D<T> &v) {
 }
 
 template <typename Container>
-std::string Join(const Container& container, const std::string& delimiter) {
-  std::ostringstream out;
+::std::string Join(const Container& container, const ::std::string& delimiter) {
+  ::std::ostringstream out;
   for (auto i = container.cbegin(); i != container.cend(); ++i) {
     if (i != container.cbegin()) {
       out << delimiter;
@@ -219,12 +219,12 @@ std::string Join(const Container& container, const std::string& delimiter) {
 }
 
 template <typename Container, typename Converter>
-std::string Join(
+::std::string Join(
     const Container& container,
-    const std::string& delimiter,
+    const ::std::string& delimiter,
     Converter converter) {
-  std::vector<std::string> converted_container(container.size());
-  std::transform(
+  ::std::vector<::std::string> converted_container(container.size());
+  ::std::transform(
       container.cbegin(),
       container.cend(),
       converted_container.begin(),
@@ -233,8 +233,8 @@ std::string Join(
 }
 
 template <typename T>
-std::string ToString(const T& x) {
-  std::ostringstream out;
+::std::string ToString(const T& x) {
+  ::std::ostringstream out;
   out << x;
   return out.str();
 }

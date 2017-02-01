@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                           *
- *  Copyright (C) 2013 Chuan Ji <jichuan89@gmail.com>                        *
+ *  Copyright (C) 2013-2017 Chuan Ji <ji@chu4n.com>                          *
  *                                                                           *
  *  Licensed under the Apache License, Version 2.0 (the "License");          *
  *  you may not use this file except in compliance with the License.         *
@@ -34,7 +34,7 @@ class WindowManager {
   // Creates a WindowManager instance for the X display/screen specified by the
   // argument string, or if unspecified, the DISPLAY environment variable. On
   // failure, returns nullptr.
-  static std::unique_ptr<WindowManager> Create(
+   static ::std::unique_ptr<WindowManager> Create(
       const std::string& display_str = std::string());
 
   ~WindowManager();
@@ -65,24 +65,27 @@ class WindowManager {
   void OnKeyPress(const XKeyEvent& e);
   void OnKeyRelease(const XKeyEvent& e);
 
-  // Xlib error handler.
+  // Xlib error handler. It must be static as its address is passed to Xlib.
   static int OnXError(Display* display, XErrorEvent* e);
   // Xlib error handler used to determine whether another window manager is
   // running. It is set as the error handler right before selecting substructure
   // redirection mask on the root window, so it is invoked if and only if
-  // another window manager is running.
+  // another window manager is running. It must be static as its address is
+  // passed to Xlib.
   static int OnWMDetected(Display* display, XErrorEvent* e);
-  // Whether an existing window manager has been detected. Set by OnWMDetected.
+  // Whether an existing window manager has been detected. Set by OnWMDetected,
+  // and hence must be static.
   static bool wm_detected_;
-  // A mutex for protecting wm_detected_.
-  static std::mutex wm_detected_mutex_;
+  // A mutex for protecting wm_detected_. It's not strictly speaking needed as
+  // this program is single threaded, but better safe than sorry.
+  static ::std::mutex wm_detected_mutex_;
 
   // Handle to the underlying Xlib Display struct.
   Display* display_;
   // Handle to root window.
   const Window root_;
   // Maps top-level windows to their frame windows.
-  std::unordered_map<Window, Window> clients_;
+  ::std::unordered_map<Window, Window> clients_;
 
   // The cursor position at the start of a window move/resize.
   Position<int> drag_start_pos_;

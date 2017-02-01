@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                           *
- *  Copyright (C) 2013 Chuan Ji <jichuan89@gmail.com>                        *
+ *  Copyright (C) 2013-2017 Chuan Ji <ji@chu4n.com>                          *
  *                                                                           *
  *  Licensed under the Apache License, Version 2.0 (the "License");          *
  *  you may not use this file except in compliance with the License.         *
@@ -20,10 +20,12 @@
 #include <glog/logging.h>
 #include "window_manager.hpp"
 
-int main(int argc, char** argv) {
-  google::InitGoogleLogging(argv[0]);
+using ::std::unique_ptr;
 
-  std::unique_ptr<WindowManager> window_manager(WindowManager::Create());
+int main(int argc, char** argv) {
+  ::google::InitGoogleLogging(argv[0]);
+
+  unique_ptr<WindowManager> window_manager = WindowManager::Create();
   if (!window_manager) {
     LOG(ERROR) << "Failed to initialize window manager.";
     return EXIT_FAILURE;
