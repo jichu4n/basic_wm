@@ -96,7 +96,7 @@ void WindowManager::Run() {
   CHECK_EQ(returned_root, root_);
   //     ii. Frame each top-level window.
   for (unsigned int i = 0; i < num_top_level_windows; ++i) {
-    Frame(top_level_windows[i]);
+    Frame(top_level_windows[i], true);
   }
   //     iii. Free top-level window array.
   XFree(top_level_windows);
@@ -160,7 +160,7 @@ void WindowManager::Run() {
   }
 }
 
-void WindowManager::Frame(Window w) {
+void WindowManager::Frame(Window w, bool was_created_before_window_manager) {
   // Visual properties of the frame to create.
   const unsigned int BORDER_WIDTH = 3;
   const unsigned long BORDER_COLOR = 0xff0000;
@@ -173,7 +173,16 @@ void WindowManager::Frame(Window w) {
   XWindowAttributes x_window_attrs;
   CHECK(XGetWindowAttributes(display_, w, &x_window_attrs));
 
-  // 2. Create frame.
+  // 2. If window was created before window manager started, we should frame
+  // it only if it is visible and doesn't set override_redirect.
+  if (was_created_before_window_manager) {
+    if (x_window_attrs.override_redirect ||
+        x_window_attrs.map_state != IsViewable) {
+      return;
+    }
+  }
+
+  // 3. Create frame.
   const Window frame = XCreateSimpleWindow(
       display_,
       root_,
@@ -184,25 +193,25 @@ void WindowManager::Frame(Window w) {
       BORDER_WIDTH,
       BORDER_COLOR,
       BG_COLOR);
-  // 3. Select events on frame.
+  // 4. Select events on frame.
   XSelectInput(
       display_,
       frame,
       SubstructureRedirectMask | SubstructureNotifyMask);
-  // 4. Add client to save set, so that it will be restored and kept alive if we
+  // 5. Add client to save set, so that it will be restored and kept alive if we
   // crash.
   XAddToSaveSet(display_, w);
-  // 5. Reparent client window.
+  // 6. Reparent client window.
   XReparentWindow(
       display_,
       w,
       frame,
       0, 0);  // Offset of client window within frame.
-  // 6. Map frame.
+  // 7. Map frame.
   XMapWindow(display_, frame);
-  // 7. Save frame handle.
+  // 8. Save frame handle.
   clients_[w] = frame;
-  // 8. Grab universal window management actions on client window.
+  // 9. Grab universal window management actions on client window.
   //   a. Move windows with alt + left button.
   XGrabButton(
       display_,
@@ -303,7 +312,7 @@ void WindowManager::OnConfigureNotify(const XConfigureEvent& e) {}
 
 void WindowManager::OnMapRequest(const XMapRequestEvent& e) {
   // 1. Frame or re-frame window.
-  Frame(e.window);
+  Frame(e.window, false);
   // 2. Actually map window.
   XMapWindow(display_, e.window);
 }

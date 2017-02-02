@@ -46,7 +46,7 @@ class WindowManager {
   // Invoked internally by Create().
   WindowManager(Display* display);
   // Frames a top-level window.
-  void Frame(Window w);
+  void Frame(Window w, bool was_created_before_window_manager);
   // Unframes a client window.
   void Unframe(Window w);
 
