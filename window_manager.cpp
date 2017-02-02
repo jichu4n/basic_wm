@@ -166,12 +166,20 @@ void WindowManager::Frame(Window w) {
   const unsigned long BORDER_COLOR = 0xff0000;
   const unsigned long BG_COLOR = 0x0000ff;
 
+  // We shouldn't be framing windows we've already framed.
   CHECK(!clients_.count(w));
 
   // 1. Retrieve attributes of window to frame.
   XWindowAttributes x_window_attrs;
   CHECK(XGetWindowAttributes(display_, w, &x_window_attrs));
-  // 2. Create frame.
+
+  // 2. If window indicates (via the override_redirect flag) that it should not
+  // be framed, do nothing.
+  if (x_window_attrs.override_redirect) {
+    return;
+  }
+
+  // 3. Create frame.
   const Window frame = XCreateSimpleWindow(
       display_,
       root_,
@@ -182,25 +190,25 @@ void WindowManager::Frame(Window w) {
       BORDER_WIDTH,
       BORDER_COLOR,
       BG_COLOR);
-  // 3. Select events on frame.
+  // 4. Select events on frame.
   XSelectInput(
       display_,
       frame,
       SubstructureRedirectMask | SubstructureNotifyMask);
-  // 4. Add client to save set, so that it will be restored and kept alive if we
+  // 5. Add client to save set, so that it will be restored and kept alive if we
   // crash.
   XAddToSaveSet(display_, w);
-  // 5. Reparent client window.
+  // 6. Reparent client window.
   XReparentWindow(
       display_,
       w,
       frame,
       0, 0);  // Offset of client window within frame.
-  // 6. Map frame.
+  // 7. Map frame.
   XMapWindow(display_, frame);
-  // 7. Save frame handle.
+  // 8. Save frame handle.
   clients_[w] = frame;
-  // 8. Grab universal window management actions on client window.
+  // 9. Grab universal window management actions on client window.
   //   a. Move windows with alt + left button.
   XGrabButton(
       display_,
@@ -282,8 +290,9 @@ void WindowManager::OnUnmapNotify(const XUnmapEvent& e) {
   // If the window is a client window we manage, unframe it upon UnmapNotify. We
   // need the check because other than a client window, we can receive an
   // UnmapNotify for
-  //     - A frame we just destroyed ourselves.
-  //     - A pre-existing and mapped top-level window we reparented.
+  //     - A frame window we just destroyed ourselves.
+  //     - A pre-existing top-level window we reparented.
+  //     - A top-level window with override_redirect set.
   if (!clients_.count(e.window)) {
     LOG(INFO) << "Ignore UnmapNotify for non-client window " << e.window;
     return;

@@ -22,12 +22,7 @@
 set -e
 
 # 1. Build binary.
-#
-# To build with GCC/libstdc++:
-#     scons --build_with=gcc basic_wm
-# To build with Clang/libc++:
-#     scons --build_with=clang basic_wm
-scons --build_with=gcc basic_wm
+make basic_wm
 
 # 2. Run.
 #
