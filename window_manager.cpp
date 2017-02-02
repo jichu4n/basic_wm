@@ -173,13 +173,7 @@ void WindowManager::Frame(Window w) {
   XWindowAttributes x_window_attrs;
   CHECK(XGetWindowAttributes(display_, w, &x_window_attrs));
 
-  // 2. If window indicates (via the override_redirect flag) that it should not
-  // be framed, do nothing.
-  if (x_window_attrs.override_redirect) {
-    return;
-  }
-
-  // 3. Create frame.
+  // 2. Create frame.
   const Window frame = XCreateSimpleWindow(
       display_,
       root_,
@@ -190,25 +184,25 @@ void WindowManager::Frame(Window w) {
       BORDER_WIDTH,
       BORDER_COLOR,
       BG_COLOR);
-  // 4. Select events on frame.
+  // 3. Select events on frame.
   XSelectInput(
       display_,
       frame,
       SubstructureRedirectMask | SubstructureNotifyMask);
-  // 5. Add client to save set, so that it will be restored and kept alive if we
+  // 4. Add client to save set, so that it will be restored and kept alive if we
   // crash.
   XAddToSaveSet(display_, w);
-  // 6. Reparent client window.
+  // 5. Reparent client window.
   XReparentWindow(
       display_,
       w,
       frame,
       0, 0);  // Offset of client window within frame.
-  // 7. Map frame.
+  // 6. Map frame.
   XMapWindow(display_, frame);
-  // 8. Save frame handle.
+  // 7. Save frame handle.
   clients_[w] = frame;
-  // 9. Grab universal window management actions on client window.
+  // 8. Grab universal window management actions on client window.
   //   a. Move windows with alt + left button.
   XGrabButton(
       display_,
