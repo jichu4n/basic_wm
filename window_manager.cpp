@@ -291,20 +291,28 @@ void WindowManager::OnMapNotify(const XMapEvent& e) {}
 
 void WindowManager::OnUnmapNotify(const XUnmapEvent& e) {
   // If the window is a client window we manage, unframe it upon UnmapNotify. We
-  // need the check because other than a client window, we can receive an
-  // UnmapNotify for
-  //     - A frame window we just destroyed ourselves.
-  //     - A pre-existing top-level window we reparented.
-  //     - A top-level window with override_redirect set.
+  // need the check because we will receive an UnmapNotify event for a frame
+  // window we just destroyed ourselves.
   if (!clients_.count(e.window)) {
     LOG(INFO) << "Ignore UnmapNotify for non-client window " << e.window;
     return;
   }
+
+  // Ignore event if it is triggered by reparenting a window that was mapped
+  // before the window manager started.
+  //
+  // Since we receive UnmapNotify events from the SubstructureNotify mask, the
+  // event attribute specifies the parent window of the window that was
+  // unmapped. This means that an UnmapNotify event from a normal client window
+  // should have this attribute set to a frame window we maintain. Only an
+  // UnmapNotify event triggered by reparenting a pre-existing window will have
+  // this attribute set to the root window.
   if (e.event == root_) {
     LOG(INFO) << "Ignore UnmapNotify for reparented pre-existing window "
               << e.window;
     return;
   }
+
   Unframe(e.window);
 }
 
