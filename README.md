@@ -15,7 +15,7 @@ Building and Running
 To build this example window manager, you will need:
 
 * A C++-11 enabled C++ compiler
-* [SCons](http://www.scons.org/)
+* [GNU Make](https://www.gnu.org/software/make/)
 * Xlib headers and libraries
 * [google-glog](https://code.google.com/p/google-glog/) library
 
@@ -25,9 +25,22 @@ To run and test it, you will need:
 * `xinit`
 * Random X utilities such as `xclock`, `xeyes`, and `xterm` to play with
 
+On [Ubuntu](https://www.ubuntu.com)/[Debian](https://www.debian.org/), you can
+install these dependencies with:
+
+    sudo apt-get install \
+        build-essential libx11-dev libgoogle-glog-dev \
+        xserver-xephyr xinit x11-apps xterm
+
+On [Fedora](https://getfedora.org)/[CentOS](https://www.centos.org), you can install these with:
+
+    sudo yum install \
+        make gcc gcc-c++ libX11-devel glog-devel \
+        xorg-x11-server-Xephyr xorg-x11-apps xterm
+
 On [Arch Linux](http://www.archlinux.org), you can install these with:
 
-    yaourt -S base-devel scons xproto google-glog \
+    yaourt -S base-devel libx11 google-glog \
         xorg-server-xephyr xorg-xinit xorg-xclock xorg-xeyes xterm
 
 Consult your own distro's documentation for how to install these.
