@@ -1,12 +1,15 @@
 Basic Window Manager
 ====================
 
-This is a very simple reparenting, non-compositing X window manager that
-demonstrates how to implement the fundamental functionality of a window manager:
+basic_wm is a simple reparenting, non-compositing X window manager that demonstrates
+how to implement the fundamental functionality of a window manager:
 
   * Managing the life cycle of windows
   * Reparenting windows
   * Basic window operations (moving, resizing, closing)
+
+It serves as a pedagogical example for my series of articles,
+[_How X Window Managers Work, And How To Write One_](https://seasonofcode.com/posts/how-x-window-managers-work-and-how-to-write-one-part-i.html).
 
 
 Building and Running
