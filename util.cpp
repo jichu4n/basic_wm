@@ -63,7 +63,14 @@ string ToString(const XEvent& e) {
       "ColormapNotify",
       "ClientMessage",
       "MappingNotify",
+      "GeneralEvent",
   };
+
+  if (e.type < 2 || e.type >= LASTEvent) {
+    ostringstream out;
+    out << "Unknown (" << e.type << ")";
+    return out.str();
+  }
 
   // 1. Compile properties we care about.
   vector<pair<string, string>> properties;
