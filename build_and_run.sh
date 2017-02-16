@@ -22,7 +22,7 @@
 set -e
 
 # 1. Build binary.
-make basic_wm
+make -j4 basic_wm
 
 # 2. Run.
 #

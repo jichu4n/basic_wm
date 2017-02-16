@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                           *
- *  Copyright (C) 2013-2017 Chuan Ji <ji@chu4n.com>                          *
+ *  Copyright (C) 2017 Chuan Ji <ji@chu4n.com>                               *
  *                                                                           *
  *  Licensed under the Apache License, Version 2.0 (the "License");          *
  *  you may not use this file except in compliance with the License.         *
@@ -16,23 +16,46 @@
  *                                                                           *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <cstdlib>
-#include <glog/logging.h>
-#include "window_manager.hpp"
+#ifndef CLIENT_HPP
+#define CLIENT_HPP
 
-using ::std::unique_ptr;
-
-int main(int argc, char** argv) {
-  ::google::InitGoogleLogging(argv[0]);
-
-  unique_ptr<WindowManager> window_manager = WindowManager::Create(
-      &argc, &argv);
-  if (!window_manager) {
-    LOG(ERROR) << "Failed to initialize window manager.";
-    return EXIT_FAILURE;
-  }
-
-  window_manager->Run();
-
-  return EXIT_SUCCESS;
+#include <memory>
+#include <gtkmm.h>
+extern "C" {
+#include <X11/Xlib.h>
 }
+#include "util.hpp"
+
+// A Client object manages a client window, its frame window and decorations.
+class Client {
+  public:
+
+    // Height of frame title bar.
+    static const int HEADER_HEIGHT = 30;
+
+    Client(::Glib::RefPtr<::Gdk::Display> g_display, Window w, Window frame);
+
+    Window const GetFrame() { return frame_; }
+
+  private:
+    bool OnTitleButtonPress(GdkEventButton* e);
+    bool OnTitleMotionNotify(GdkEventMotion* e);
+    bool OnTitleButtonRelease(GdkEventButton* e);
+
+    ::Glib::RefPtr<::Gdk::Display> g_display_;
+    Display* display_;
+    ::Glib::RefPtr<::Gdk::Cursor> g_cursor_;
+    Window w_, frame_;
+    ::Glib::RefPtr<::Gdk::Window> g_frame_;
+    ::Gtk::Window g_header_;
+    ::Gtk::Grid g_header_grid_;
+    ::Gtk::Label g_label_;
+    ::Gtk::Button g_close_button_;
+
+    Position<int> drag_start_pos_;
+    Position<int> drag_start_frame_pos_;
+    bool is_dragging_;
+};
+
+#endif
+

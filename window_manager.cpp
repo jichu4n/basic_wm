@@ -23,39 +23,41 @@ extern "C" {
 #include <cstring>
 #include <algorithm>
 #include <glog/logging.h>
+#include <gdk/gdkx.h>
 #include "util.hpp"
 
 using ::std::max;
+using ::std::move;
 using ::std::mutex;
 using ::std::string;
 using ::std::unique_ptr;
+using ::Glib::RefPtr;
 
 bool WindowManager::wm_detected_;
 mutex WindowManager::wm_detected_mutex_;
 
-unique_ptr<WindowManager> WindowManager::Create(const string& display_str) {
-  // 1. Open X display.
-  const char* display_c_str =
-        display_str.empty() ? nullptr : display_str.c_str();
-  Display* display = XOpenDisplay(display_c_str);
-  if (display == nullptr) {
-    LOG(ERROR) << "Failed to open X display " << XDisplayName(display_c_str);
-    return nullptr;
-  }
+unique_ptr<WindowManager> WindowManager::Create(int* argc, char*** argv) {
+  // Init threads, as GTK is multi-threaded.
+  XInitThreads();
+  // 1. Initialize GTK.
+  unique_ptr<::Gtk::Main> g_main(new ::Gtk::Main(argc, argv));
   // 2. Construct WindowManager instance.
-  return unique_ptr<WindowManager>(new WindowManager(display));
+  return unique_ptr<WindowManager>(
+      new WindowManager(
+        ::Gdk::Display::get_default(), move(g_main)));
 }
 
-WindowManager::WindowManager(Display* display)
-    : display_(CHECK_NOTNULL(display)),
+WindowManager::WindowManager(
+    RefPtr<::Gdk::Display> g_display, unique_ptr<::Gtk::Main> g_main)
+    : g_main_(move(g_main)),
+      g_display_(g_display),
+      display_(GDK_DISPLAY_XDISPLAY(g_display_->gobj())),
       root_(DefaultRootWindow(display_)),
       WM_PROTOCOLS(XInternAtom(display_, "WM_PROTOCOLS", false)),
       WM_DELETE_WINDOW(XInternAtom(display_, "WM_DELETE_WINDOW", false)) {
 }
 
-WindowManager::~WindowManager() {
-  XCloseDisplay(display_);
-}
+WindowManager::~WindowManager() {}
 
 void WindowManager::Run() {
   // 1. Initialization.
@@ -94,7 +96,9 @@ void WindowManager::Run() {
       &top_level_windows,
       &num_top_level_windows));
   CHECK_EQ(returned_root, root_);
-  //     ii. Frame each top-level window.
+  //     ii. Frame each top-level window. We need to init gtkmm because we will
+  //     be creating  gtkmm classes as part of Frame().
+  ::Gtk::Main::init_gtkmm_internals();
   for (unsigned int i = 0; i < num_top_level_windows; ++i) {
     Frame(top_level_windows[i], true);
   }
@@ -103,61 +107,12 @@ void WindowManager::Run() {
   //   e. Ungrab X server.
   XUngrabServer(display_);
 
-  // 2. Main event loop.
-  for (;;) {
-    // 1. Get next event.
-    XEvent e;
-    XNextEvent(display_, &e);
-    LOG(INFO) << "Received event: " << ToString(e);
+  //   f. Set up GDK event filter.
+  gdk_window_add_filter(nullptr, &WindowManager::OnEvent, this);
 
-    // 2. Dispatch event.
-    switch (e.type) {
-      case CreateNotify:
-        OnCreateNotify(e.xcreatewindow);
-        break;
-      case DestroyNotify:
-        OnDestroyNotify(e.xdestroywindow);
-        break;
-      case ReparentNotify:
-        OnReparentNotify(e.xreparent);
-        break;
-      case MapNotify:
-        OnMapNotify(e.xmap);
-        break;
-      case UnmapNotify:
-        OnUnmapNotify(e.xunmap);
-        break;
-      case ConfigureNotify:
-        OnConfigureNotify(e.xconfigure);
-        break;
-      case MapRequest:
-        OnMapRequest(e.xmaprequest);
-        break;
-      case ConfigureRequest:
-        OnConfigureRequest(e.xconfigurerequest);
-        break;
-      case ButtonPress:
-        OnButtonPress(e.xbutton);
-        break;
-      case ButtonRelease:
-        OnButtonRelease(e.xbutton);
-        break;
-      case MotionNotify:
-        // Skip any already pending motion events.
-        while (XCheckTypedWindowEvent(
-            display_, e.xmotion.window, MotionNotify, &e)) {}
-        OnMotionNotify(e.xmotion);
-        break;
-      case KeyPress:
-        OnKeyPress(e.xkey);
-        break;
-      case KeyRelease:
-        OnKeyRelease(e.xkey);
-        break;
-      default:
-        LOG(WARNING) << "Ignored event";
-    }
-  }
+  // 2. Main event loop.
+  LOG(INFO) << "Starting main loop";
+  g_main_->run();
 }
 
 void WindowManager::Frame(Window w, bool was_created_before_window_manager) {
@@ -189,7 +144,7 @@ void WindowManager::Frame(Window w, bool was_created_before_window_manager) {
       x_window_attrs.x,
       x_window_attrs.y,
       x_window_attrs.width,
-      x_window_attrs.height,
+      x_window_attrs.height + Client::HEADER_HEIGHT,
       BORDER_WIDTH,
       BORDER_COLOR,
       BG_COLOR);
@@ -206,11 +161,12 @@ void WindowManager::Frame(Window w, bool was_created_before_window_manager) {
       display_,
       w,
       frame,
-      0, 0);  // Offset of client window within frame.
+      0, Client::HEADER_HEIGHT);  // Offset of client window within frame.
   // 7. Map frame.
   XMapWindow(display_, frame);
   // 8. Save frame handle.
-  clients_[w] = frame;
+  clients_.emplace(w, unique_ptr<Client>(new Client(g_display_, w, frame)));
+  /*
   // 9. Grab universal window management actions on client window.
   //   a. Move windows with alt + left button.
   XGrabButton(
@@ -254,6 +210,7 @@ void WindowManager::Frame(Window w, bool was_created_before_window_manager) {
       false,
       GrabModeAsync,
       GrabModeAsync);
+  */
 
   LOG(INFO) << "Framed window " << w << " [" << frame << "]";
 }
@@ -262,7 +219,7 @@ void WindowManager::Unframe(Window w) {
   CHECK(clients_.count(w));
 
   // We reverse the steps taken in Frame().
-  const Window frame = clients_[w];
+  const Window frame = clients_.at(w)->GetFrame();
   // 1. Unmap frame.
   XUnmapWindow(display_, frame);
   // 2. Reparent client window.
@@ -279,6 +236,64 @@ void WindowManager::Unframe(Window w) {
   clients_.erase(w);
 
   LOG(INFO) << "Unframed window " << w << " [" << frame << "]";
+}
+
+GdkFilterReturn WindowManager::OnEvent(
+    GdkXEvent* xevent, GdkEvent* event, gpointer data) {
+  WindowManager* const thiz = static_cast<WindowManager*>(data);
+  return thiz->OnEvent(*static_cast<XEvent*>(xevent));
+}
+
+GdkFilterReturn WindowManager::OnEvent(const XEvent& e) {
+  LOG(INFO) << "Received event: " << ToString(e);
+  switch (e.type) {
+    case CreateNotify:
+      OnCreateNotify(e.xcreatewindow);
+      break;
+    case DestroyNotify:
+      OnDestroyNotify(e.xdestroywindow);
+      break;
+    case ReparentNotify:
+      OnReparentNotify(e.xreparent);
+      break;
+    case MapNotify:
+      OnMapNotify(e.xmap);
+      break;
+    case UnmapNotify:
+      OnUnmapNotify(e.xunmap);
+      break;
+    case ConfigureNotify:
+      OnConfigureNotify(e.xconfigure);
+      break;
+    case MapRequest:
+      OnMapRequest(e.xmaprequest);
+      break;
+    case ConfigureRequest:
+      OnConfigureRequest(e.xconfigurerequest);
+      break;
+    /*
+    case ButtonPress:
+      OnButtonPress(e.xbutton);
+      break;
+    case ButtonRelease:
+      OnButtonRelease(e.xbutton);
+      break;
+    case MotionNotify:
+      // Skip any already pending motion events.
+          display_, e.xmotion.window, MotionNotify, const_cast<XEvent*>(&e))) {}
+      OnMotionNotify(e.xmotion);
+      break;
+    case KeyPress:
+      OnKeyPress(e.xkey);
+      break;
+    case KeyRelease:
+      OnKeyRelease(e.xkey);
+      break;
+    */
+    default:
+      break;
+  }
+  return GDK_FILTER_CONTINUE;
 }
 
 void WindowManager::OnCreateNotify(const XCreateWindowEvent& e) {}
@@ -335,7 +350,7 @@ void WindowManager::OnConfigureRequest(const XConfigureRequestEvent& e) {
   changes.sibling = e.above;
   changes.stack_mode = e.detail;
   if (clients_.count(e.window)) {
-    const Window frame = clients_[e.window];
+    const Window frame = clients_.at(e.window)->GetFrame();
     XConfigureWindow(display_, frame, e.value_mask, &changes);
     LOG(INFO) << "Resize [" << frame << "] to " << Size<int>(e.width, e.height);
   }
@@ -345,7 +360,7 @@ void WindowManager::OnConfigureRequest(const XConfigureRequestEvent& e) {
 
 void WindowManager::OnButtonPress(const XButtonEvent& e) {
   CHECK(clients_.count(e.window));
-  const Window frame = clients_[e.window];
+  const Window frame = clients_.at(e.window)->GetFrame();
 
   // 1. Save initial cursor position.
   drag_start_pos_ = Position<int>(e.x_root, e.y_root);
@@ -373,7 +388,7 @@ void WindowManager::OnButtonRelease(const XButtonEvent& e) {}
 
 void WindowManager::OnMotionNotify(const XMotionEvent& e) {
   CHECK(clients_.count(e.window));
-  const Window frame = clients_[e.window];
+  const Window frame = clients_.at(e.window)->GetFrame();
   const Position<int> drag_pos(e.x_root, e.y_root);
   const Vector2D<int> delta = drag_pos - drag_start_pos_;
 
@@ -449,7 +464,7 @@ void WindowManager::OnKeyPress(const XKeyEvent& e) {
       i = clients_.begin();
     }
     // 2. Raise and set focus.
-    XRaiseWindow(display_, i->second);
+    XRaiseWindow(display_, i->second->GetFrame());
     XSetInputFocus(display_, i->first, RevertToPointerRoot, CurrentTime);
   }
 }

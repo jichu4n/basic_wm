@@ -16,12 +16,19 @@
 #                                                                             #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-def FlagsForFile( filename, **kwargs ):
+import subprocess
+
+def FlagsForFile(filename, **kwargs):
+  gtkmm_cflags = subprocess.check_output([
+      'pkg-config',
+      '--cflags-only-I',
+      'gtkmm-3.0',
+  ], universal_newlines=True).split()
   return {
       'flags': [
           '-x', 'c++',
           '-std=c++1y',
           '-Wall',
           '-Werror',
-      ],
+      ] + gtkmm_cflags,
   }
