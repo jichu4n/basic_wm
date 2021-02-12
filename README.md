@@ -9,7 +9,7 @@ how to implement the fundamental functionality of a window manager:
   * Basic window operations (moving, resizing, closing)
 
 It serves as a pedagogical example for my series of articles,
-[_How X Window Managers Work, And How To Write One_](https://seasonofcode.com/posts/how-x-window-managers-work-and-how-to-write-one-part-i.html).
+[_How X Window Managers Work, And How To Write One_](https://jichu4n.com/posts/how-x-window-managers-work-and-how-to-write-one-part-i/).
 
 
 Building and Running
@@ -65,3 +65,4 @@ Supported keyboard shortcuts:
 * **Alt + Right Click**: Resize window
 * **Alt + F4**: Close window
 * **Alt + Tab**: Switch window
+
