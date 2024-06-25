@@ -18,6 +18,7 @@
 
 CXXFLAGS ?= -Wall -g
 CXXFLAGS += -std=c++1y
+CXXFLAGS += -DGLOG_USE_GLOG_EXPORT
 CXXFLAGS += `pkg-config --cflags x11 libglog`
 LDFLAGS += `pkg-config --libs x11 libglog`
 
