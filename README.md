@@ -23,9 +23,9 @@ To build this example window manager, you will need:
 
 To run and test it, you will need:
 
-- [Xephyr](http://www.freedesktop.org/wiki/Software/Xephyr/)
+- [Xephyr](https://en.wikipedia.org/wiki/Xephyr)
 - `xinit`
-- Random X utilities such as `xclock`, `xeyes`, and `xterm` to play with
+- Some X utilities such as `xclock`, `xeyes`, and `xterm` to play with
 
 On Debian / Ubuntu:
 
