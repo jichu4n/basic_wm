@@ -1,0 +1,37 @@
+name: build
+on: [push, pull_request]
+jobs:
+  build-deb:
+    strategy:
+      matrix:
+        container: ['ubuntu:latest', 'debian:latest']
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: apt-get update
+      - run: apt-get install -y build-essential pkg-config libx11-dev libgoogle-glog-dev
+      - run: make
+      - run: ls -lh ./basic_wm
+  build-rpm:
+    strategy:
+      matrix:
+        container: ['fedora:latest']
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: yum install -y make gcc gcc-c++ libX11-devel glog-devel
+      - run: make
+      - run: ls -lh ./basic_wm
+  build-arch:
+    strategy:
+      matrix:
+        container: ['archlinux:latest']
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pacman -Sy --noconfirm base-devel libx11 google-glog
+      - run: make
+      - run: ls -lh ./basic_wm
