@@ -80,6 +80,15 @@ class WindowManager {
   // Atom constants.
   const Atom WM_PROTOCOLS;
   const Atom WM_DELETE_WINDOW;
+  const Atom TEST_COMMAND;
+  const Atom TEST_COMMAND_PROPERTY;
+
+  void HandleTestCommand(const XClientMessageEvent& e);
+  void DispatchTestCommand(long command, Window target, long arg2, long arg3);
+  void MoveClientFrame(Window client, int x, int y);
+  void ResizeClientFrame(Window client, int width, int height);
+  void CloseClient(Window client);
+  void FocusNextClient(Window client);
 };
 
 #endif
