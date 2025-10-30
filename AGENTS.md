@@ -12,7 +12,7 @@ Rewrite the basic_wm in in Zig for a Zig based WM w/ TDD w/ high coverage testin
 
 4. apt-get install \
     build-essential pkg-config libx11-dev libgoogle-glog-dev \
-    xserver-xephyr xinit x11-apps xterm apt-utils dialog xvfb
+    xserver-xephyr xinit x11-apps xterm apt-utils dialog xvfb python3-xlib
 
 
 #### Code Practices / Guidance
