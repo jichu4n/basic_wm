@@ -1,8 +1,10 @@
-### Agent Instruction on Project goal: 
+### Project goal: 
 
 Rewrite the basic_wm in in Zig for a Zig based WM w/ TDD w/ high coverage testing with a focus on porting, optimization, testing and confirming handling in real use, collecting data and efficiency.
 
-### Agent instruction: Before you start development, setup build env:
+### Important Setup:
+
+Before you start any coding, install:
 
 1. apt update
 
