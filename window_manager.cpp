@@ -1,6 +1,7 @@
 #include "window_manager.hpp"
 extern "C" {
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
 }
 #include <cstring>
 #include <algorithm>
@@ -32,7 +33,11 @@ WindowManager::WindowManager(Display* display)
     : display_(CHECK_NOTNULL(display)),
       root_(DefaultRootWindow(display_)),
       WM_PROTOCOLS(XInternAtom(display_, "WM_PROTOCOLS", false)),
-      WM_DELETE_WINDOW(XInternAtom(display_, "WM_DELETE_WINDOW", false)) {
+      WM_DELETE_WINDOW(XInternAtom(display_, "WM_DELETE_WINDOW", false)),
+      TEST_COMMAND(XInternAtom(display_, "_BASIC_WM_TEST", false)),
+      TEST_COMMAND_PROPERTY(XInternAtom(display_, "_BASIC_WM_TEST_DATA", false)) {
+  LOG(INFO) << "Test command atom: " << TEST_COMMAND
+            << " property atom: " << TEST_COMMAND_PROPERTY;
 }
 
 WindowManager::~WindowManager() {
@@ -51,7 +56,7 @@ void WindowManager::Run() {
     XSelectInput(
         display_,
         root_,
-        SubstructureRedirectMask | SubstructureNotifyMask);
+        SubstructureRedirectMask | SubstructureNotifyMask | PropertyChangeMask);
     XSync(display_, false);
     if (wm_detected_) {
       LOG(ERROR) << "Detected another window manager on display "
@@ -135,6 +140,63 @@ void WindowManager::Run() {
         break;
       case KeyRelease:
         OnKeyRelease(e.xkey);
+        break;
+      case ClientMessage:
+        if (e.xclient.message_type == TEST_COMMAND) {
+          HandleTestCommand(e.xclient);
+        }
+        break;
+      case PropertyNotify:
+        if (e.xproperty.window == root_) {
+          LOG(INFO) << "PropertyNotify atom=" << e.xproperty.atom;
+        }
+        if (e.xproperty.window == root_ &&
+            e.xproperty.atom == TEST_COMMAND_PROPERTY) {
+          Atom actual_type;
+          int actual_format;
+          unsigned long num_items;
+          unsigned long bytes_after;
+          unsigned char* data = nullptr;
+          const int status = XGetWindowProperty(display_,
+                                                root_,
+                                                TEST_COMMAND_PROPERTY,
+                                                0,
+                                                4,
+                                                False,
+                                                XA_CARDINAL,
+                                                &actual_type,
+                                                &actual_format,
+                                                &num_items,
+                                                &bytes_after,
+                                                &data);
+          LOG(INFO) << "Property fetch status=" << status
+                    << " type=" << actual_type
+                    << " format=" << actual_format
+                    << " items=" << num_items;
+          if (status == Success &&
+              actual_type == XA_CARDINAL &&
+              actual_format == 32 &&
+              num_items >= 4) {
+            const long* values = reinterpret_cast<long*>(data);
+            DispatchTestCommand(values[0],
+                                static_cast<Window>(values[1]),
+                                values[2],
+                                values[3]);
+          } else if (status == Success &&
+                     actual_type == None &&
+                     actual_format == 0 &&
+                     num_items == 0) {
+            // Property was deleted; nothing to dispatch.
+          } else {
+            LOG(WARNING) << "Unexpected property payload: type=" << actual_type
+                         << " format=" << actual_format
+                         << " items=" << num_items;
+          }
+          if (data != nullptr) {
+            XFree(data);
+          }
+          XDeleteProperty(display_, root_, TEST_COMMAND_PROPERTY);
+        }
         break;
       default:
         LOG(WARNING) << "Ignored event";
@@ -389,51 +451,117 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e) {
 void WindowManager::OnKeyPress(const XKeyEvent& e) {
   if ((e.state & Mod1Mask) &&
       (e.keycode == XKeysymToKeycode(display_, XK_F4))) {
-    // alt + f4: Close window.
-    //
-    // There are two ways to tell an X window to close. The first is to send it
-    // a message of type WM_PROTOCOLS and value WM_DELETE_WINDOW. If the client
-    // has not explicitly marked itself as supporting this more civilized
-    // behavior (using XSetWMProtocols()), we kill it with XKillClient().
-    Atom* supported_protocols;
-    int num_supported_protocols;
-    if (XGetWMProtocols(display_,
-                        e.window,
-                        &supported_protocols,
-                        &num_supported_protocols) &&
-        (::std::find(supported_protocols,
-                     supported_protocols + num_supported_protocols,
-                     WM_DELETE_WINDOW) !=
-         supported_protocols + num_supported_protocols)) {
-      LOG(INFO) << "Gracefully deleting window " << e.window;
-      // 1. Construct message.
-      XEvent msg;
-      memset(&msg, 0, sizeof(msg));
-      msg.xclient.type = ClientMessage;
-      msg.xclient.message_type = WM_PROTOCOLS;
-      msg.xclient.window = e.window;
-      msg.xclient.format = 32;
-      msg.xclient.data.l[0] = WM_DELETE_WINDOW;
-      // 2. Send message to window to be closed.
-      CHECK(XSendEvent(display_, e.window, false, 0, &msg));
-    } else {
-      LOG(INFO) << "Killing window " << e.window;
-      XKillClient(display_, e.window);
-    }
+    CloseClient(e.window);
   } else if ((e.state & Mod1Mask) &&
              (e.keycode == XKeysymToKeycode(display_, XK_Tab))) {
-    // alt + tab: Switch window.
-    // 1. Find next window.
-    auto i = clients_.find(e.window);
-    CHECK(i != clients_.end());
-    ++i;
-    if (i == clients_.end()) {
-      i = clients_.begin();
-    }
-    // 2. Raise and set focus.
-    XRaiseWindow(display_, i->second);
-    XSetInputFocus(display_, i->first, RevertToPointerRoot, CurrentTime);
+    FocusNextClient(e.window);
   }
+}
+
+void WindowManager::HandleTestCommand(const XClientMessageEvent& e) {
+  const long command = e.data.l[0];
+  const Window target = static_cast<Window>(e.data.l[1]);
+  DispatchTestCommand(command, target, e.data.l[2], e.data.l[3]);
+}
+
+void WindowManager::DispatchTestCommand(long command,
+                                        Window target,
+                                        long arg2,
+                                        long arg3) {
+  LOG(INFO) << "Received test command " << command << " for window " << target;
+  switch (command) {
+    case 1:
+      MoveClientFrame(target, static_cast<int>(arg2), static_cast<int>(arg3));
+      break;
+    case 2:
+      ResizeClientFrame(target, static_cast<int>(arg2), static_cast<int>(arg3));
+      break;
+    case 3:
+      CloseClient(target);
+      break;
+    case 4:
+      FocusNextClient(target);
+      break;
+    default:
+      LOG(WARNING) << "Unknown test command " << command;
+  }
+}
+
+void WindowManager::MoveClientFrame(Window client, int x, int y) {
+  auto it = clients_.find(client);
+  if (it == clients_.end()) {
+    LOG(WARNING) << "Move command for unknown client " << client;
+    return;
+  }
+  XMoveWindow(display_, it->second, x, y);
+  XSync(display_, false);
+}
+
+void WindowManager::ResizeClientFrame(Window client, int width, int height) {
+  auto it = clients_.find(client);
+  if (it == clients_.end()) {
+    LOG(WARNING) << "Resize command for unknown client " << client;
+    return;
+  }
+  const int dest_width = ::std::max(1, width);
+  const int dest_height = ::std::max(1, height);
+  XResizeWindow(display_, it->second, dest_width, dest_height);
+  XResizeWindow(display_, client, dest_width, dest_height);
+  XSync(display_, false);
+}
+
+void WindowManager::CloseClient(Window client) {
+  if (!clients_.count(client)) {
+    LOG(WARNING) << "Close command for unknown client " << client;
+    return;
+  }
+  Atom* supported_protocols = nullptr;
+  int num_supported_protocols = 0;
+  if (XGetWMProtocols(display_,
+                      client,
+                      &supported_protocols,
+                      &num_supported_protocols) &&
+      (::std::find(supported_protocols,
+                   supported_protocols + num_supported_protocols,
+                   WM_DELETE_WINDOW) !=
+       supported_protocols + num_supported_protocols)) {
+    LOG(INFO) << "Gracefully deleting window " << client;
+    XEvent msg;
+    memset(&msg, 0, sizeof(msg));
+    msg.xclient.type = ClientMessage;
+    msg.xclient.message_type = WM_PROTOCOLS;
+    msg.xclient.window = client;
+    msg.xclient.format = 32;
+    msg.xclient.data.l[0] = WM_DELETE_WINDOW;
+    CHECK(XSendEvent(display_, client, false, 0, &msg));
+  } else {
+    LOG(INFO) << "Killing window " << client;
+    XKillClient(display_, client);
+  }
+  if (supported_protocols != nullptr) {
+    XFree(supported_protocols);
+  }
+}
+
+void WindowManager::FocusNextClient(Window client) {
+  auto it = clients_.find(client);
+  if (it == clients_.end()) {
+    LOG(WARNING) << "Focus command for unknown client " << client;
+    return;
+  }
+  auto next = it;
+  if (clients_.size() <= 1) {
+    return;
+  }
+  do {
+    ++next;
+    if (next == clients_.end()) {
+      next = clients_.begin();
+    }
+  } while (next == it);
+  XRaiseWindow(display_, next->second);
+  XSetInputFocus(display_, next->first, RevertToPointerRoot, CurrentTime);
+  XSync(display_, false);
 }
 
 void WindowManager::OnKeyRelease(const XKeyEvent& e) {}
