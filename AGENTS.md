@@ -18,6 +18,7 @@ Rewrite the basic_wm in in Zig for a Zig based WM w/ TDD w/ high coverage testin
 #### Code Practices / Guidance
 
 * Always end and remove/clean up Xvfb process after test.
+* use dialog package to add animated progress/run indicators to tests
 
 
 #### Install Zig
