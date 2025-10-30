@@ -76,8 +76,8 @@ class BasicWMTestSession:
                 "-nolisten",
                 "tcp",
             ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
         self._wait_for_display()
         env = os.environ.copy()
@@ -89,8 +89,8 @@ class BasicWMTestSession:
         self._wm = subprocess.Popen(
             ["./basic_wm"],
             env=self._env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
         self._wait_for_wm()
         self._started = True
@@ -136,8 +136,8 @@ class BasicWMTestSession:
                 geometry,
             ],
             env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
         window = self._wait_for_window(name)
         frame = self._wait_for_frame(window)
@@ -322,13 +322,28 @@ class BasicWMTestSession:
         raise RuntimeError("Timed out waiting for window frame")
 
     def _find_window(self, window, name: str):
+        candidate_names = []
         try:
             wm_name = window.get_wm_name()
         except Exception:
             wm_name = None
         if isinstance(wm_name, bytes):
             wm_name = wm_name.decode(errors="ignore")
-        if wm_name == name:
+        if isinstance(wm_name, str):
+            candidate_names.append(wm_name)
+        try:
+            wm_class = window.get_wm_class()
+        except Exception:
+            wm_class = None
+        if isinstance(wm_class, (list, tuple)):
+            for entry in wm_class:
+                if isinstance(entry, bytes):
+                    entry = entry.decode(errors="ignore")
+                if isinstance(entry, str):
+                    candidate_names.append(entry)
+        elif isinstance(wm_class, str):
+            candidate_names.append(wm_class)
+        if name in candidate_names:
             return window
         try:
             children = window.query_tree().children
