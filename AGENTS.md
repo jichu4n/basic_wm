@@ -1,4 +1,8 @@
-# Agent instruction: Before you start development, setup build env:
+### Agent Instruction on Project goal: 
+
+Rewrite the basic_wm in in Zig for a Zig based WM w/ TDD w/ high coverage testing with a focus on porting, optimization, testing and confirming handling in real use, collecting data and efficiency.
+
+### Agent instruction: Before you start development, setup build env:
 
 1. apt update
 
@@ -12,6 +16,12 @@
 
 
 #### Install Zig
+
+0. Check if Zig is installed and if not install it:
+   
+```bash
+zig version
+```
 
 1. Get the latest Zig version from GitHub:
 
